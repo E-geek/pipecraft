@@ -1,0 +1,13 @@
+diff --git a/dist/build/webpack/loaders/utils.js b/dist/build/webpack/loaders/utils.js
+index 06455a090652828278a3ab7994ef63f8c6cd55a0..fff46a2b5b928512046dd811e85822d9886499f4 100644
+--- a/dist/build/webpack/loaders/utils.js
++++ b/dist/build/webpack/loaders/utils.js
+@@ -62,7 +62,7 @@ function isClientComponentEntryModule(mod) {
+     const isActionLayerEntry = (rscInfo == null ? void 0 : rscInfo.actions) && (rscInfo == null ? void 0 : rscInfo.type) === _constants.RSC_MODULE_TYPES.client;
+     return hasClientDirective || isActionLayerEntry || imageRegex.test(mod.resource);
+ }
+-const regexCSS = /\.(css|scss|sass)(\?.*)?$/;
++const regexCSS = /\.(css|scss|sass|styl)(\?.*)?$/;
+ function isCSSMod(mod) {
+     var _mod_loaders;
+     return !!(mod.type === "css/mini-extract" || mod.resource && regexCSS.test(mod.resource) || ((_mod_loaders = mod.loaders) == null ? void 0 : _mod_loaders.some(({ loader })=>loader.includes("next-style-loader/index.js") || loader.includes("mini-css-extract-plugin/loader.js") || loader.includes("@vanilla-extract/webpack-plugin/loader/"))));
