@@ -1,4 +1,5 @@
 {
+  "name": "@pipecraft/front-office",
   "private": true,
   "scripts": {
     "dev": "next",
