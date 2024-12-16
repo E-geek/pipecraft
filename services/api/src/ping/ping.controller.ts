@@ -6,7 +6,7 @@ import { PingService } from './ping.service';
 export class PingController {
   constructor(private readonly pingService :PingService) {}
 
-  @Get('/ping')
+  @Get('/')
   ping(@Query('data') data ?:string) {
     return this.pingService.ping(data);
   }

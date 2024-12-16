@@ -7,7 +7,7 @@ export const validationSchema = Joi.object({
     'test',
     'provision',
   ).default('development'),
-  PORT: Joi.number().default(3000),
+  PORT: Joi.number().default(8580),
   DB_HOST: Joi.string().default('localhost'),
   DB_PORT: Joi.number().default(5432),
   DB_NAME: Joi.string().default('pipecraft'),
