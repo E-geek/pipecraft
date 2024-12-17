@@ -8,6 +8,8 @@ import config from './config/config';
 import dbConfig from './config/db.config';
 import { validationSchema } from './config/validation';
 import { PingModule } from './ping/ping.module';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -30,6 +32,8 @@ import { PingModule } from './ping/ping.module';
       useFactory: (configService :ConfigService) => ({ ...configService.get('database') }),
     }),
     PingModule,
+    AuthModule,
+    UsersModule,
   ],
   controllers: [],
   providers: [],

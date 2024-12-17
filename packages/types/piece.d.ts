@@ -1,3 +1,3 @@
-import {JsonMap} from "./json";
+import { Json } from "./json";
 
-export interface IPiece extends JsonMap {}
+export type IPiece = Json;
