@@ -1,5 +1,7 @@
 import crypto from 'crypto';
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Peer } from './peer';
+import { IUserMeta } from '@pipecraft/types';
 
 let globalSalt = 'NOT_SET_YEST';
 
@@ -45,6 +47,17 @@ export class User {
   })
   isVerified :boolean;
 
+  @OneToMany(() => Peer, (peer) => peer.user)
+  peers :Peer[];
+
+  @Column({
+    type: 'jsonb',
+    nullable: false,
+    default: {},
+    comment: 'meta for the user',
+  })
+  meta :IUserMeta;
+
   @CreateDateColumn()
   createdAt :Date;
 
@@ -67,6 +80,6 @@ export class User {
   }
 
   isCorrectPassword(password :string, salt :string = globalSalt) :boolean {
-    return this.password.toString('hex') === User.getPasswordHash(password, salt).toString('hex');
+    return this.password.compare(User.getPasswordHash(password, salt)) === 0;
   }
 }

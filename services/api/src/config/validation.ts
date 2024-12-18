@@ -13,4 +13,5 @@ export const validationSchema = Joi.object({
   DB_NAME: Joi.string().default('pipecraft'),
   DB_USER: Joi.string().required(),
   DB_PASS: Joi.string().required(),
+  LOCAL_SECRET: Joi.string().required(),
 });
