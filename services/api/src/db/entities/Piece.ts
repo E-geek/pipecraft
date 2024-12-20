@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { IPiece } from '@pipecraft/types';
-import { Building } from './building';
+import { Building } from './Building';
 
 @Entity({
   comment: 'Elementary data portion for processing',

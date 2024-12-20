@@ -1,4 +1,4 @@
-import { randomBytes, randomUUID } from 'crypto';
+import { randomBytes } from 'crypto';
 import {
   BeforeInsert,
   Column,
@@ -9,7 +9,7 @@ import {
   UpdateDateColumn
 } from 'typeorm';
 import jwt, { TokenExpiredError } from 'jsonwebtoken';
-import { User } from './user';
+import { User } from './User';
 
 export type IPeerTokenStatus = 'ok' | 'expired' | 'invalid';
 

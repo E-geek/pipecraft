@@ -1,5 +1,7 @@
 import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { IBuildingMeta } from '@pipecraft/types';
+import { BuildingType } from './BuildingType';
+import { BuildingRunConfig } from './BuildingRunConfig';
 
 @Entity({
   comment: 'Data of build: miner, factory, printer, etc...'
@@ -40,6 +42,26 @@ export class Building {
     default: {},
   })
   meta :IBuildingMeta;
+
+  @ManyToOne(() => BuildingType, {
+    nullable: false,
+    lazy: false,
+    cascade: true,
+    onDelete: 'CASCADE',
+    onUpdate: 'NO ACTION',
+  })
+  type :BuildingType;
+
+  @OneToMany(() => BuildingRunConfig, buildRunConfig => buildRunConfig.building, {
+    nullable: true,
+    lazy: true,
+    cascade: true,
+  })
+  runConfig :BuildingRunConfig[];
+
+  get lastRunConfig() {
+    return this.runConfig[this.runConfig.length - 1];
+  }
 
   @CreateDateColumn()
   createdAt :Date;
