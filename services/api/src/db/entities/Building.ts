@@ -1,7 +1,18 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
+} from 'typeorm';
 import { IBuildingMeta } from '@pipecraft/types';
 import { BuildingType } from './BuildingType';
 import { BuildingRunConfig } from './BuildingRunConfig';
+import { Scheduler } from './Scheduler';
+import { User } from './User';
 
 @Entity({
   comment: 'Data of build: miner, factory, printer, etc...'
@@ -63,6 +74,21 @@ export class Building {
     return this.runConfig[this.runConfig.length - 1];
   }
 
+  @OneToOne(() => Scheduler, scheduler => scheduler.building, {
+    nullable: true,
+    cascade: true,
+  })
+  scheduler :Scheduler;
+
+  @ManyToOne(() => User, {
+    nullable: false,
+    cascade: true,
+  })
+  owner :User;
+
   @CreateDateColumn()
   createdAt :Date;
+
+  @UpdateDateColumn()
+  updatedAt :Date;
 }

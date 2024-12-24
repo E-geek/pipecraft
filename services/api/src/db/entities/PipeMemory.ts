@@ -20,7 +20,7 @@ export class PipeMemory {
     type: 'bigint',
     comment: 'id and default ordering key'
   })
-  id :bigint;
+  pmid :bigint;
 
   @ManyToOne(() => Building, {
     nullable: false,
@@ -64,6 +64,14 @@ export class PipeMemory {
   })
   ordering :'direct'|'reverse';
 
+  @Column({
+    type: 'smallint',
+    nullable: false,
+    default: 10,
+    comment: 'Priority of the process, less is high like in linux, from -20 to 20',
+  })
+  priority :number;
+
   @CreateDateColumn()
   createdAt :Date;
 
@@ -98,9 +106,5 @@ export class PipeMemory {
       ]);
     }
     return out;
-  }
-
-  public static getBatchFor(pipeMemory :PipeMemory, batchSize :number|string) {
-    // fill it
   }
 }

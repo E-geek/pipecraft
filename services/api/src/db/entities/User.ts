@@ -12,7 +12,7 @@ export class User {
   @PrimaryGeneratedColumn('uuid', {
     comment: 'user id'
   })
-  uid :bigint;
+  uid :string;
 
   @Column({
     type: 'varchar',
