@@ -2,6 +2,7 @@ import { CreateDateColumn, Entity, ManyToOne, OneToOne, PrimaryGeneratedColumn }
 import { BuildingRunConfig } from './BuildingRunConfig';
 import { Piece } from './Piece';
 
+// Yes, this is additional columns for a Piece but it can be clear by other ruleset
 @Entity({
   comment: 'Every piece has a context of creation. This is important data for debugging and auditing'
 })
