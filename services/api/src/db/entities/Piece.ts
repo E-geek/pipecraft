@@ -4,8 +4,11 @@ import { Building } from './Building';
 
 @Entity({
   comment: 'Elementary data portion for processing',
+  orderBy: {
+    pid: 'ASC',
+  }
 })
-@Index([ 'pid', 'outputId' ], { unique: true })
+@Index([ 'pid', 'from' ], { unique: true })
 export class Piece {
   @PrimaryGeneratedColumn('increment', {
     type: 'bigint',

@@ -25,7 +25,6 @@ export class User {
 
   @Column({
     type: 'bytea',
-    length: 32,
     nullable: true,
     comment: 'password hash',
   })

@@ -27,14 +27,12 @@ export class Building {
   @ManyToOne(() => Building, build => build.output, {
     nullable: true,
     lazy: true,
-    cascade: true,
   })
   input :Building | null;
 
   @OneToMany(() => Building, build => build.input, {
     nullable: true,
     lazy: true,
-    cascade: true,
   })
   output :Building[] | null;
 
@@ -76,7 +74,7 @@ export class Building {
 
   @OneToOne(() => Scheduler, scheduler => scheduler.building, {
     nullable: true,
-    cascade: true,
+    cascade: false,
   })
   scheduler :Scheduler;
 

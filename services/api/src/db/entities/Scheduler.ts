@@ -1,4 +1,13 @@
-import { Column, CreateDateColumn, Entity, Index, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
+  OneToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
+} from 'typeorm';
 import { Building } from './Building';
 
 @Entity({
@@ -6,7 +15,7 @@ import { Building } from './Building';
 })
 @Index([ 'isActive' ], {
   unique: false,
-  where: 'isActive = true',
+  where: '"isActive" = true',
 })
 export class Scheduler {
   @PrimaryGeneratedColumn('uuid', {
@@ -27,6 +36,7 @@ export class Scheduler {
     cascade: true,
     eager: true,
   })
+  @JoinColumn()
   building :Building;
 
   // for building we can use https://crontab.guru/

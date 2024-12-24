@@ -1,7 +1,7 @@
 import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { IBuildingRunConfigMeta } from '@pipecraft/types';
 import { Building } from './Building';
 import { RunReport } from './RunReport';
-import { IBuildingRunConfigMeta } from '@pipecraft/types/building-run-config';
 
 @Entity({
   comment: 'This table stores the run configuration for a building run'
