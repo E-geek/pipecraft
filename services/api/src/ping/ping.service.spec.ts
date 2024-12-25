@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PingService } from './ping.service';
+import { ConfigModule } from '@nestjs/config';
 
 describe('PingService', () => {
   let service :PingService;
@@ -7,6 +8,7 @@ describe('PingService', () => {
   beforeEach(async () => {
     const module :TestingModule = await Test.createTestingModule({
       providers: [ PingService ],
+      imports: [ ConfigModule ],
     }).compile();
 
     service = module.get<PingService>(PingService);

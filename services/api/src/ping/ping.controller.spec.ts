@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PingController } from './ping.controller';
 import { PingService } from './ping.service';
+import { ConfigModule } from '@nestjs/config';
 
 describe('PingController', () => {
   let controller :PingController;
@@ -9,6 +10,7 @@ describe('PingController', () => {
     const module :TestingModule = await Test.createTestingModule({
       controllers: [ PingController ],
       providers: [ PingService ],
+      imports: [ ConfigModule ],
     }).compile();
 
     controller = module.get<PingController>(PingController);

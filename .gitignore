@@ -6,6 +6,7 @@ node_modules/### WebStorm+iml template
 private
 services/**/.yarn/*
 packages/**/.yarn/*
+junit.xml
 
 # User-specific stuff
 .idea
