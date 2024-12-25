@@ -1,10 +1,8 @@
-import * as path from 'node:path';
-
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import config from './config/config';
+import config, { dotEnvPath } from './config/config';
 import dbConfig from './config/db.config';
 import { validationSchema } from './config/validation';
 import { PingModule } from './ping/ping.module';
@@ -14,14 +12,7 @@ import { UsersModule } from './users/users.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: [
-        // root of package
-        path.join(__dirname, '..', '.env'),
-        path.join(__dirname, '..', `${process.env.NODE_ENV}.env`),
-        // monorepo root
-        path.join(__dirname, '..', '..', '..', '.env'),
-        path.join(__dirname, '..', '..', '..', `${process.env.NODE_ENV}.env`),
-      ],
+      envFilePath: dotEnvPath,
       load: [ config, dbConfig ],
       isGlobal: true,
       validationSchema,
