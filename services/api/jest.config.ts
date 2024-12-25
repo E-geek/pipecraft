@@ -39,9 +39,10 @@ const config :Config = {
   testLocationInResults: true,
   testPathIgnorePatterns: [ './node_modules/' ],
   reporters: [ 'default', 'jest-junit' ],
+  globalSetup: '<rootDir>/jest.setup.ts',
   moduleNameMapper: {
   },
-  setupFilesAfterEnv: [ '<rootDir>/jest.setup.ts', 'jest-extended/all' ],
+  setupFilesAfterEnv: [ 'jest-extended/all' ],
   testTimeout: 2 * 60 * 1000
 };
 

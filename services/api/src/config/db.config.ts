@@ -1,6 +1,6 @@
 import { registerAs } from '@nestjs/config';
 import * as process from 'node:process';
-import { DataSourceOptions } from 'typeorm';
+import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 
 export default registerAs('database', () => {
   return {
@@ -15,5 +15,5 @@ export default registerAs('database', () => {
     autoLoadEntities: true,
     synchronize: false,
     logging: 'all',
-  } as DataSourceOptions;
+  } as PostgresConnectionOptions;
 });
