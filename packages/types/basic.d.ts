@@ -36,3 +36,5 @@ export type MutuallyExclude<T, E extends keyof T> = {
  * // ResultData = { error: string } | { errorObject: Record<string, string> } | { data: string }
  */
 export type MutuallyExcludeAll<T> = MutuallyExclude<T, keyof T>;
+
+export type Writeable<T> = { -readonly [P in keyof T]: T[P] };

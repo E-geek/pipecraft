@@ -7,6 +7,8 @@ import { TestDBSeeder } from './tool/test-db-seeder';
 import { dotEnvPath } from './config/config';
 import dbConfig from './config/db.config';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
+import { TestPrinter } from './tool/TestPrinter';
+import { Writable } from 'typia/lib/typings/Writable';
 
 config({
   path: dotEnvPath
@@ -52,7 +54,9 @@ const recreateDatabase = async () => {
 };
 
 const setupDatabase = async () => {
-  const dataSource = new DataSource(dataSourceConfig);
+  const conf :Writable<PostgresConnectionOptions> = JSON.parse(JSON.stringify(dataSourceConfig));
+  conf.entities = [ TestPrinter, ...(conf.entities as string[]) ];
+  const dataSource = new DataSource(conf);
 
   try {
     await dataSource.initialize();
@@ -61,6 +65,7 @@ const setupDatabase = async () => {
     // Применяем миграции
     console.log('⏳ Применяем миграции...');
     await dataSource.runMigrations();
+    await dataSource.synchronize();
 
     // Заполняем тестовыми данными
     console.log('⏳ Заполняем тестовыми данными...');
