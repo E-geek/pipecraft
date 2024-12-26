@@ -8,6 +8,7 @@ import { validationSchema } from './config/validation';
 import { PingModule } from './ping/ping.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { ManufactureModule } from './manufacture/manufacture.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { UsersModule } from './users/users.module';
     PingModule,
     AuthModule,
     UsersModule,
+    ManufactureModule,
   ],
   controllers: [],
   providers: [],
