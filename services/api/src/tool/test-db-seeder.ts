@@ -1,7 +1,7 @@
 import { DataSource, QueryRunner } from 'typeorm';
 import { User } from '../db/entities/User';
 import { BuildingType } from '../db/entities/BuildingType';
-import { IBuildingTypeMeta, IBuildingTypeType } from '@pipecraft/types';
+import { IBuildingTypeType } from '@pipecraft/types';
 import { Building } from '../db/entities/Building';
 import { BuildingRunConfig } from '../db/entities/BuildingRunConfig';
 import { PipeMemory } from '../db/entities/PipeMemory';
@@ -72,14 +72,21 @@ export class TestDBSeeder {
       await queryRunner.manager.save(runConfig);
     }
     const pipeMemoryMF = new PipeMemory();
-    pipeMemoryMF.from = buildings.get('miner')!;
-    pipeMemoryMF.to = buildings.get('factory')!;
+    const miner = buildings.get('miner')!;
+    const factory = buildings.get('factory')!;
+    const printer = buildings.get('printer')!;
+    pipeMemoryMF.from = miner;
+    pipeMemoryMF.to = factory;
     const pipeMemoryFP = new PipeMemory();
-    pipeMemoryFP.from = buildings.get('factory')!;
-    pipeMemoryFP.to = buildings.get('printer')!;
+    pipeMemoryFP.from = factory;
+    pipeMemoryFP.to = printer;
+    factory.input = miner;
+    printer.input = factory;
     await Promise.all([
       queryRunner.manager.save(pipeMemoryMF),
       queryRunner.manager.save(pipeMemoryFP),
+      queryRunner.manager.save(factory),
+      queryRunner.manager.save(printer),
     ]);
   }
 
