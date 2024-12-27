@@ -1,29 +1,21 @@
 // setup before all suites
 import { Client } from 'pg';
 import { DataSource } from 'typeorm';
-import { config } from 'dotenv';
 
-import { TestDBSeeder } from './tool/test-db-seeder';
-import { dotEnvPath } from './config/config';
-import dbConfig from './config/db.config';
-import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
-import { TestPrinter } from './tool/TestPrinter';
-import { Writable } from 'typia/lib/typings/Writable';
+import { TestDBSeeder } from './test/test-db-seeder';
+import { getTestDBConf } from './test/db.conf';
 
-config({
-  path: dotEnvPath
-});
-const dataSourceConfig = dbConfig() as PostgresConnectionOptions;
-const dbName = dataSourceConfig.database;
+const dbConfig = getTestDBConf();
+const dbName = dbConfig.database;
 
 const recreateDatabase = async () => {
   console.log('⏳ Удаляем и создаем тестовую БД...');
 
   const adminClient = new Client({
-    host: dataSourceConfig.host,
-    port: dataSourceConfig.port,
-    user: dataSourceConfig.username,
-    password: dataSourceConfig.password,
+    host: dbConfig.host,
+    port: dbConfig.port,
+    user: dbConfig.username,
+    password: dbConfig.password,
     database: 'postgres', // Подключаемся к системной БД
   });
 
@@ -54,9 +46,7 @@ const recreateDatabase = async () => {
 };
 
 const setupDatabase = async () => {
-  const conf :Writable<PostgresConnectionOptions> = JSON.parse(JSON.stringify(dataSourceConfig));
-  conf.entities = [ TestPrinter, ...(conf.entities as string[]) ];
-  const dataSource = new DataSource(conf);
+  const dataSource = new DataSource(dbConfig);
 
   try {
     await dataSource.initialize();
@@ -71,7 +61,6 @@ const setupDatabase = async () => {
     console.log('⏳ Заполняем тестовыми данными...');
     const seeder = new TestDBSeeder(dataSource);
     await seeder.seed();
-
     console.log('✅ БД готова к тестам.');
   } catch (error) {
     console.error('❌ Ошибка при подготовке БД:', error);
