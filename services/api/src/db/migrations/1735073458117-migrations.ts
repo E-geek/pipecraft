@@ -1,9 +1,9 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class Migrations1735073458117 implements MigrationInterface {
-    name = 'Migrations1735073458117'
+    name = 'Migrations1735073458117';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
+    public async up(queryRunner :QueryRunner) :Promise<void> {
         await queryRunner.query(`
             CREATE TABLE "building_type" (
                 "btid" BIGSERIAL NOT NULL,
@@ -229,7 +229,7 @@ export class Migrations1735073458117 implements MigrationInterface {
         `);
     }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
+    public async down(queryRunner :QueryRunner) :Promise<void> {
         await queryRunner.query(`
             ALTER TABLE "pipe_memory" DROP CONSTRAINT "FK_0b5d8b00c6958dce814d7e08f81"
         `);

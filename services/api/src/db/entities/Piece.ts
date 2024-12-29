@@ -1,5 +1,5 @@
 import { Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { IPiece } from '@pipecraft/types';
+import { IPiece, IPieceId } from '@pipecraft/types';
 import { Building } from './Building';
 
 @Entity({
@@ -14,7 +14,7 @@ export class Piece {
     type: 'bigint',
     comment: 'id and default ordering key'
   })
-  pid :bigint;
+  pid :IPieceId;
 
   @ManyToOne(() => Building, {
     nullable: false,

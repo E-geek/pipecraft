@@ -1,5 +1,11 @@
 {
   "name": "@pipecraft/types",
   "version": "0.0.1",
-  "packageManager": "yarn@4.5.3"
+  "packageManager": "yarn@4.5.3",
+  "devDependencies": {
+    "typeorm": "^0.3.20",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.42.0"
+  }
 }
