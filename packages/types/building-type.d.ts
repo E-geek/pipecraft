@@ -31,7 +31,7 @@ export interface IBuildingRunResult {
   errorLogs ?:string[];
 }
 
-export interface IBuildingTypePackage {
+export interface IBuildingTypeDescriptor {
   runner :(args :IBuildingRunArgs) =>Promise<IBuildingRunResult>;
   memory ?:{
     entities :IBuildingMemory[];

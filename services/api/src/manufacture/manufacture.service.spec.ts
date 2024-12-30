@@ -9,6 +9,7 @@ import { ManufactureService } from './manufacture.service';
 
 import { TestPrinter } from '../test/TestPrinter';
 import { getTestDBConf } from '../test/db.conf';
+import { IBuildingTypeDescriptor } from '@pipecraft/types';
 
 describe('ManufactureService', () => {
   let service :ManufactureService;
@@ -30,6 +31,20 @@ describe('ManufactureService', () => {
   it('should be defined', () => {
     expect(service).toBeDefined();
     expect(service.startFromMining).toBeDefined();
+  });
+
+  it('register and has packages', async () => {
+    expect(service.registerBuildingType).toBeDefined();
+    expect(service.hasBuildingType).toBeDefined();
+    const packageForRegistration :IBuildingTypeDescriptor = {
+      runner: () => Promise.resolve({
+        okResult: [],
+        errorResult: [],
+      }),
+    };
+    await service.registerBuildingType('test', packageForRegistration);
+    const exists = service.hasBuildingType('test');
+    expect(exists).toBe(true);
   });
 
   it('check full pipe', async () => {
