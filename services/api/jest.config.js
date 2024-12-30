@@ -1,6 +1,4 @@
-import type { Config } from 'jest';
-
-const config :Config = {
+module.exports = {
   verbose: true,
   moduleFileExtensions: [
     'js',
@@ -10,11 +8,10 @@ const config :Config = {
   rootDir: 'src',
   testRegex: '.*\\.spec\\.ts$',
   transform: {
-    '^.+\\.(t|j)s$': 'ts-jest',
-    '^.+\\.[tj]sx?$': [
+    '^.+\\.tsx?$': [
       'ts-jest',
       {
-        isolatedModules: true,
+        tsconfig: '../../.tsconfig.base.json',
       },
     ],
   },
@@ -45,5 +42,3 @@ const config :Config = {
   setupFilesAfterEnv: [ 'jest-extended/all' ],
   testTimeout: 2 * 60 * 1000
 };
-
-export default config;
