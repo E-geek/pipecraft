@@ -1,7 +1,7 @@
-import { Column, PrimaryGeneratedColumn } from 'typeorm';
+import { BaseEntity, Column, PrimaryGeneratedColumn } from 'typeorm';
 import { IBuildingMemory } from '@pipecraft/types';
 
-export abstract class Memory extends IBuildingMemory {
+export abstract class Memory extends BaseEntity implements IBuildingMemory {
   @PrimaryGeneratedColumn('increment', {
     type: 'bigint',
     comment: 'id of the building'

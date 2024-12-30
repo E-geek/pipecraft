@@ -3426,6 +3426,7 @@ __metadata:
     "@nestjs/schematics": "npm:^10.0.0"
     "@nestjs/testing": "npm:^10.0.0"
     "@nestjs/typeorm": "npm:^10.0.2"
+    "@pipecraft/types": "npm:0.0.1"
     "@sendgrid/mail": "npm:^8.1.4"
     "@types/express": "npm:^4.17.17"
     "@types/jest": "npm:^29.5.2"
@@ -3491,13 +3492,21 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@pipecraft/root@workspace:."
   dependencies:
+    "@typescript-eslint/eslint-plugin": "npm:^6.0.0"
+    "@typescript-eslint/parser": "npm:^6.0.0"
+    eslint: "npm:^8.42.0"
     lerna: "npm:^8.1.9"
   languageName: unknown
   linkType: soft
 
-"@pipecraft/types@workspace:packages/types":
+"@pipecraft/types@npm:0.0.1, @pipecraft/types@workspace:packages/types":
   version: 0.0.0-use.local
   resolution: "@pipecraft/types@workspace:packages/types"
+  dependencies:
+    "@typescript-eslint/eslint-plugin": "npm:^6.0.0"
+    "@typescript-eslint/parser": "npm:^6.0.0"
+    eslint: "npm:^8.42.0"
+    typeorm: "npm:^0.3.20"
   languageName: unknown
   linkType: soft
 

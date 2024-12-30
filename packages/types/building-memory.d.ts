@@ -1,6 +1,6 @@
-import { BaseEntity } from 'typeorm';
+import { type BaseEntity } from 'typeorm';
 
-export abstract class IBuildingMemory extends BaseEntity {
+export interface IBuildingMemory extends BaseEntity {
   mid :bigint;
   bid :bigint;
   createdAt :Date;
