@@ -1,6 +1,10 @@
 {
   "extends": ["../../.tsconfig.base.json"],
   "compilerOptions": {
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["./*"]
+    },
     "plugins": [
       {
         "transform": "@nestia/core/lib/transform",

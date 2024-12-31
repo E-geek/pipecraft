@@ -1,5 +1,5 @@
-import { Json } from './json';
 import { MixedList } from 'typeorm/common/MixedList';
+import { JsonMap } from './json';
 import { IPiece, IPieceId } from './piece';
 import { OrPromise } from './basic';
 import { IBuildingMemory } from './building-memory';
@@ -8,7 +8,7 @@ import { IBuildingMeta } from './building';
 
 export type IBuildingTypeType = 'miner' | 'factory' | 'printer' | 'logic';
 
-export interface IBuildingTypeMeta extends Json {
+export interface IBuildingTypeMeta extends JsonMap {
   type :IBuildingTypeType; 
 }
 

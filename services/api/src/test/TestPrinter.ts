@@ -1,5 +1,5 @@
-import { Memory } from '../db/entities/Memory';
 import { Column, Entity } from 'typeorm';
+import { Memory } from '../db/entities/Memory';
 
 @Entity({
   name: 'memory_test_printer',

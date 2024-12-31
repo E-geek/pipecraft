@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigModule } from '@nestjs/config';
 import { PingController } from './ping.controller';
 import { PingService } from './ping.service';
-import { ConfigModule } from '@nestjs/config';
 
 describe('PingController', () => {
   let controller :PingController;

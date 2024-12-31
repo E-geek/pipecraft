@@ -1,19 +1,26 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { Repository } from 'typeorm';
-import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { tmpdir } from 'node:os';
+import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
+import { Test, TestingModule } from '@nestjs/testing';
+import { Repository } from 'typeorm';
 
+import { IBuildingTypeDescriptor } from '@pipecraft/types';
+
+import { TestPrinter } from '@/test/TestPrinter';
+import { getTestDBConf } from '@/test/db.conf';
 import { ManufactureService } from './manufacture.service';
 
-import { TestPrinter } from '../test/TestPrinter';
-import { getTestDBConf } from '../test/db.conf';
-import { IBuildingTypeDescriptor } from '@pipecraft/types';
 
 describe('ManufactureService', () => {
   let service :ManufactureService;
   let testPrinterRepo :Repository<TestPrinter>;
+  const getDummyBuildingType = () :IBuildingTypeDescriptor => ({
+    runner: () => Promise.resolve({
+      okResult: [],
+      errorResult: [],
+    }),
+  });
 
   beforeEach(async () => {
     const module :TestingModule = await Test.createTestingModule({
@@ -33,18 +40,22 @@ describe('ManufactureService', () => {
     expect(service.startFromMining).toBeDefined();
   });
 
-  it('register and has packages', async () => {
+  it('register and has building type', async () => {
     expect(service.registerBuildingType).toBeDefined();
     expect(service.hasBuildingType).toBeDefined();
-    const packageForRegistration :IBuildingTypeDescriptor = {
-      runner: () => Promise.resolve({
-        okResult: [],
-        errorResult: [],
-      }),
-    };
+    const packageForRegistration = getDummyBuildingType();
     await service.registerBuildingType('test', packageForRegistration);
     const exists = service.hasBuildingType('test');
     expect(exists).toBe(true);
+    expect(service.registerBuildingType('test', packageForRegistration)).rejects.toThrow('Building type already exists');
+  });
+
+  it('unregister building type', async () => {
+    const packageForRegistration = getDummyBuildingType();
+    await service.registerBuildingType('test', packageForRegistration);
+    expect(service.hasBuildingType('test')).toBe(true);
+    service.unregisterBuildingType('test');
+    expect(service.hasBuildingType('test')).toBe(false);
   });
 
   it('check full pipe', async () => {

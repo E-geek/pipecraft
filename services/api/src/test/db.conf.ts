@@ -1,10 +1,10 @@
 import { Writable } from '@pipecraft/types';
 import { config } from 'dotenv';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
-import { TestPrinter } from './TestPrinter';
 
 import { dotEnvPath } from '../config/config';
 import dbConfig from '../config/db.config';
+import { TestPrinter } from './TestPrinter';
 
 config({
   path: dotEnvPath

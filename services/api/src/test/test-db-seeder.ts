@@ -1,7 +1,7 @@
 import { DataSource, QueryRunner } from 'typeorm';
+import { IBuildingTypeType } from '@pipecraft/types';
 import { User } from '../db/entities/User';
 import { BuildingType } from '../db/entities/BuildingType';
-import { IBuildingTypeType } from '@pipecraft/types';
 import { Building } from '../db/entities/Building';
 import { BuildingRunConfig } from '../db/entities/BuildingRunConfig';
 import { PipeMemory } from '../db/entities/PipeMemory';

@@ -1,7 +1,7 @@
 import * as crypto from 'crypto';
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-import { Peer } from './Peer';
 import { IUserMeta } from '@pipecraft/types';
+import { Peer } from './Peer';
 
 let globalSalt = 'NOT_SET_YEST';
 

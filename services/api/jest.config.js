@@ -5,13 +5,16 @@ module.exports = {
     'json',
     'ts'
   ],
+  moduleNameMapper: {
+    '@/(.*)': '<rootDir>/$1',
+  },
   rootDir: 'src',
   testRegex: '.*\\.spec\\.ts$',
   transform: {
     '^.+\\.tsx?$': [
       'ts-jest',
       {
-        tsconfig: '../../.tsconfig.base.json',
+        tsconfig: 'tsconfig.json',
       },
     ],
   },
@@ -37,8 +40,6 @@ module.exports = {
   testPathIgnorePatterns: [ './node_modules/' ],
   reporters: [ 'default', 'jest-junit' ],
   globalSetup: '<rootDir>/jest.setup.ts',
-  moduleNameMapper: {
-  },
   setupFilesAfterEnv: [ 'jest-extended/all' ],
   testTimeout: 2 * 60 * 1000
 };

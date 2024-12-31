@@ -4,7 +4,7 @@ module.exports = {
     project: 'tsconfig.json',
     sourceType: 'module',
   },
-  plugins: ['@typescript-eslint/eslint-plugin'],
+  plugins: ['@typescript-eslint/eslint-plugin', 'import', 'jest'],
   extends: [
     'plugin:@typescript-eslint/recommended',
   ],
@@ -13,8 +13,50 @@ module.exports = {
     node: true,
     jest: true,
   },
-  ignorePatterns: ['.eslintrc.js'],
+  ignorePatterns: ['.eslintrc.js', 'jest.config.js'],
   rules: {
+    "sort-imports": [
+      "error",
+      {
+        "ignoreCase": true,
+        "ignoreDeclarationSort": true
+      }
+    ],
+    "import/order": [1, {
+      "groups": [
+        "builtin",
+        "external",
+        "internal",
+        "parent",
+        "sibling",
+        "index"
+      ],
+      pathGroups: [
+        {
+          pattern: '@nestjs/**',
+          group: 'external',
+          position: 'before',
+        },
+        {
+          pattern: '@pipecraft/**',
+          group: 'internal',
+        },
+        {
+          pattern: '@/**',
+          group: 'sibling',
+        }
+      ],
+    }],
+    'jest/no-hooks': 'off',
+    'jest/prefer-expect-assertions': 0,
+    'jest/no-truthy-falsy': 0,
+    'jest/no-restricted-matchers': [
+      'error',
+      {
+        toBeTruthy: 'Avoid `toBeTruthy`',
+        toBeFalsy: 'Avoid `toBeFalsy`',
+      },
+    ],
     '@typescript-eslint/semi': ['error', 'always'],
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',

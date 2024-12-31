@@ -1,5 +1,5 @@
-import { registerAs } from '@nestjs/config';
 import * as process from 'node:process';
+import { registerAs } from '@nestjs/config';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 
 export default registerAs('database', () => {

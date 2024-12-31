@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-import { Building } from './Building';
 import { Opaque } from '@pipecraft/types';
+import { Building } from './Building';
 
 export type IPieceId = Opaque<bigint, 'pieceId'>;
 export type IAttempts = Opaque<number, 'attempts'>;
