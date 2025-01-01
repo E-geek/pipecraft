@@ -21,7 +21,7 @@ export class BuildingRunConfig {
     lazy: true,
     cascade: true,
   })
-  runReport :RunReport[];
+  runReport :Promise<RunReport[]>;
 
   @Column({
     type: 'jsonb',

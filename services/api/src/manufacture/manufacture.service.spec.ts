@@ -10,6 +10,7 @@ import { IBuildingTypeDescriptor } from '@pipecraft/types';
 import { TestPrinter } from '@/test/TestPrinter';
 import { getTestDBConf } from '@/test/db.conf';
 import { ManufactureService } from './manufacture.service';
+import { Manufacture } from '@/manufacture/Manufacture';
 
 
 describe('ManufactureService', () => {
@@ -59,6 +60,7 @@ describe('ManufactureService', () => {
   });
 
   it('clear building types', () => {
+    expect(service.clearBuildingTypes).toBeDefined();
     const packageForRegistration = getDummyBuildingType();
     service.registerBuildingType('test', packageForRegistration);
     service.registerBuildingType('test2', packageForRegistration);
@@ -67,6 +69,12 @@ describe('ManufactureService', () => {
     service.clearBuildingTypes();
     expect(service.hasBuildingType('test')).toBe(false);
     expect(service.hasBuildingType('test2')).toBe(false);
+  });
+
+  it('build manufacture', async() => {
+    expect(service.buildManufacture).toBeDefined();
+    const manufacture = await service.buildManufacture(1n);
+    expect(manufacture).toBeInstanceOf(Manufacture);
   });
 
   it('check full pipe', async () => {

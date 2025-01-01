@@ -18,12 +18,12 @@ export class Piece {
 
   @ManyToOne(() => Building, {
     nullable: false,
-    lazy: false,
+    lazy: true,
     cascade: true,
     onDelete: 'CASCADE',
     onUpdate: 'NO ACTION',
   })
-  from :Building;
+  from :Promise<Building>;
   
   @CreateDateColumn()
   createdAt :Date;

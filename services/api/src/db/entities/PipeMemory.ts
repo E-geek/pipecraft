@@ -24,7 +24,7 @@ export class PipeMemory {
 
   @ManyToOne(() => Building, {
     nullable: false,
-    lazy: false,
+    eager: true,
     cascade: true,
     onDelete: 'CASCADE',
     onUpdate: 'NO ACTION',
@@ -33,7 +33,7 @@ export class PipeMemory {
 
   @ManyToOne(() => Building, {
     nullable: false,
-    lazy: false,
+    eager: true,
     cascade: true,
     onDelete: 'CASCADE',
     onUpdate: 'NO ACTION',

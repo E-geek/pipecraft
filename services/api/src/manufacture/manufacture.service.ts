@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { IBuildingTypeDescriptor, Json, JsonMap } from '@pipecraft/types';
+import { Manufacture } from '@/manufacture/Manufacture';
 
 export interface IRunManufactureOptions extends JsonMap {
   config :Json;
@@ -28,5 +29,9 @@ export class ManufactureService {
 
   public clearBuildingTypes() {
     this._buildingTypes.clear();
+  }
+
+  public async buildManufacture(startBuildingId :bigint) :Promise<Manufacture>{
+    return new Manufacture();
   }
 }

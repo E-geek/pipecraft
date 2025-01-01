@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 import { DataSource, QueryRunner } from 'typeorm';
 import { IBuildingTypeType } from '@pipecraft/types';
 import { User } from '../db/entities/User';
@@ -51,8 +53,8 @@ export class TestDBSeeder {
     for (const name of this._listMinimalPipe) {
       const building = new Building();
       building.batchSize = '1';
-      building.input = null;
-      building.output = null;
+      building.input = Promise.resolve(null);
+      building.output = Promise.resolve(null);
       building.meta = {
         'test': 'test',
       };
@@ -80,8 +82,8 @@ export class TestDBSeeder {
     const pipeMemoryFP = new PipeMemory();
     pipeMemoryFP.from = factory;
     pipeMemoryFP.to = printer;
-    factory.input = miner;
-    printer.input = factory;
+    factory.input = Promise.resolve(miner);
+    printer.input = Promise.resolve(factory);
     await Promise.all([
       queryRunner.manager.save(pipeMemoryMF),
       queryRunner.manager.save(pipeMemoryFP),

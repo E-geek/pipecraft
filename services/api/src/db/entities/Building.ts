@@ -28,13 +28,13 @@ export class Building {
     nullable: true,
     lazy: true,
   })
-  input :Building | null;
+  input :Promise<Building | null>;
 
   @OneToMany(() => Building, build => build.input, {
     nullable: true,
     lazy: true,
   })
-  output :Building[] | null;
+  output :Promise<Building[] | null>;
 
   @Column({
     type: 'varchar',
@@ -54,7 +54,7 @@ export class Building {
 
   @ManyToOne(() => BuildingType, {
     nullable: false,
-    lazy: false,
+    eager: true,
     cascade: true,
     onDelete: 'CASCADE',
     onUpdate: 'NO ACTION',
@@ -63,7 +63,7 @@ export class Building {
 
   @OneToMany(() => BuildingRunConfig, buildRunConfig => buildRunConfig.building, {
     nullable: true,
-    lazy: true,
+    eager: true,
     cascade: true,
   })
   runConfig :BuildingRunConfig[];
