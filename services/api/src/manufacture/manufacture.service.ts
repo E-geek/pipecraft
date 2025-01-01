@@ -25,4 +25,8 @@ export class ManufactureService {
   public unregisterBuildingType(type :string){
     this._buildingTypes.delete(type);
   }
+
+  public clearBuildingTypes() {
+    this._buildingTypes.clear();
+  }
 }

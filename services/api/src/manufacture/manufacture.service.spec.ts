@@ -58,6 +58,17 @@ describe('ManufactureService', () => {
     expect(service.hasBuildingType('test')).toBe(false);
   });
 
+  it('clear building types', () => {
+    const packageForRegistration = getDummyBuildingType();
+    service.registerBuildingType('test', packageForRegistration);
+    service.registerBuildingType('test2', packageForRegistration);
+    expect(service.hasBuildingType('test')).toBe(true);
+    expect(service.hasBuildingType('test2')).toBe(true);
+    service.clearBuildingTypes();
+    expect(service.hasBuildingType('test')).toBe(false);
+    expect(service.hasBuildingType('test2')).toBe(false);
+  });
+
   it('check full pipe', async () => {
     // 1. Generate 10 JSONs into `tmpdir` and store via NN.json Format: {num: RandomNumber, str: RandomNumber + 's'}
     // 2. Run manufacture and pass test miner
