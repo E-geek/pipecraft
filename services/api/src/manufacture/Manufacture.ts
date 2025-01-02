@@ -2,13 +2,13 @@ import { IBuilding } from '@/manufacture/Building';
 import { IPipe } from '@/manufacture/Pipe';
 
 export interface IManufacture {
-  buildings :IPipe[];
-  pipes :IBuilding[];
+  buildings :IBuilding[];
+  pipes :IPipe[];
 }
 
 export class Manufacture implements IManufacture {
-  private _pipes :IBuilding[];
-  private _buildings :IPipe[];
+  private _pipes :IPipe[];
+  private _buildings :IBuilding[];
 
   public get buildings() {
     return [ ...this._buildings ];

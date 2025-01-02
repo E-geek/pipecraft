@@ -75,6 +75,12 @@ describe('ManufactureService', () => {
     expect(service.buildManufacture).toBeDefined();
     const manufacture = await service.buildManufacture(1n);
     expect(manufacture).toBeInstanceOf(Manufacture);
+    const buildings = manufacture.buildings;
+    expect(buildings).toBeDefined();
+    expect(buildings).toHaveLength(3);
+    const pipes = manufacture.pipes;
+    expect(pipes).toBeDefined();
+    expect(pipes).toHaveLength(2);
   });
 
   it('check full pipe', async () => {
