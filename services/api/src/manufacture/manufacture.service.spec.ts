@@ -11,6 +11,8 @@ import { TestPrinter } from '@/test/TestPrinter';
 import { getTestDBConf } from '@/test/db.conf';
 import { ManufactureService } from './manufacture.service';
 import { Manufacture } from '@/manufacture/Manufacture';
+import { Building } from '@/db/entities/Building';
+import { PipeMemory } from '@/db/entities/PipeMemory';
 
 
 describe('ManufactureService', () => {
@@ -28,7 +30,7 @@ describe('ManufactureService', () => {
       providers: [ ManufactureService ],
       imports: [
         TypeOrmModule.forRoot(getTestDBConf()),
-        TypeOrmModule.forFeature([ TestPrinter ]),
+        TypeOrmModule.forFeature([ TestPrinter, Building, PipeMemory ]),
       ]
     }).compile();
 
@@ -73,7 +75,7 @@ describe('ManufactureService', () => {
 
   it('build manufacture', async() => {
     expect(service.buildManufacture).toBeDefined();
-    const manufacture = await service.buildManufacture(1n);
+    const manufacture = await service.buildManufacture(1n) as Manufacture;
     expect(manufacture).toBeInstanceOf(Manufacture);
     const buildings = manufacture.buildings;
     expect(buildings).toBeDefined();
