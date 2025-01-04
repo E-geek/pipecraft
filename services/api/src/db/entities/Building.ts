@@ -8,11 +8,12 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn
 } from 'typeorm';
-import { IBuildingMeta } from '@pipecraft/types';
+import { IBuildingMeta, Nullable } from '@pipecraft/types';
 import { BuildingType } from './BuildingType';
 import { BuildingRunConfig } from './BuildingRunConfig';
 import { Scheduler } from './Scheduler';
 import { User } from './User';
+import { Manufacture } from './Manufacture';
 
 @Entity({
   comment: 'Data of build: miner, factory, printer, etc...'
@@ -44,6 +45,14 @@ export class Building {
     comment: 'N parts, N% of ready parts, 0 or 0% - infinite',
   })
   batchSize :string;
+
+  @ManyToOne(() => Manufacture, manufacture => manufacture.buildings, {
+    nullable: true,
+    lazy: true,
+    cascade: false,
+    onDelete: 'SET NULL',
+  })
+  manufacture :Promise<Nullable<Manufacture>>;
 
   @Column({
     type: 'jsonb',

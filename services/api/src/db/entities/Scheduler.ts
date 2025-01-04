@@ -3,12 +3,14 @@ import {
   CreateDateColumn,
   Entity,
   Index,
-  JoinColumn,
+  JoinColumn, ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn
 } from 'typeorm';
+import { Nullable } from '@pipecraft/types';
 import { Building } from './Building';
+import { Manufacture } from './Manufacture';
 
 @Entity({
   comment: 'Store all schedulers',
@@ -47,6 +49,14 @@ export class Scheduler {
     comment: 'cron string',
   })
   cron :string;
+
+  @ManyToOne(() => Manufacture, (manufacture :Manufacture) => manufacture.schedulers, {
+    nullable: true,
+    lazy: true,
+    cascade: false,
+    onDelete: 'SET NULL',
+  })
+  manufacture :Promise<Nullable<Manufacture>>;
 
   @CreateDateColumn()
   createdAt :Date;

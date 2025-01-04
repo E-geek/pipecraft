@@ -1,6 +1,7 @@
 import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-import { Opaque } from '@pipecraft/types';
+import { Nullable, Opaque } from '@pipecraft/types';
 import { Building } from './Building';
+import { Manufacture } from './Manufacture';
 
 export type IPieceId = Opaque<bigint, 'pieceId'>;
 export type IAttempts = Opaque<number, 'attempts'>;
@@ -71,6 +72,14 @@ export class PipeMemory {
     comment: 'Priority of the process, less is high like in linux, from -20 to 20',
   })
   priority :number;
+
+  @ManyToOne(() => Manufacture, {
+    nullable: true,
+    lazy: true,
+    cascade: false,
+    onDelete: 'SET NULL',
+  })
+  manufacture :Promise<Nullable<Manufacture>>;
 
   @CreateDateColumn()
   createdAt :Date;

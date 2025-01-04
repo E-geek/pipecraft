@@ -1,10 +1,11 @@
 import { IPieceId } from '@pipecraft/types';
 import { PipeMemory } from '@/db/entities/PipeMemory';
-import { Building, IBuilding } from '@/manufacture/Building';
+import { IBuilding } from '@/manufacture/Building';
 
 export interface IPipe {
   from :IBuilding;
   to :IBuilding;
+  getModel() :PipeMemory;
   getBatch() :any[];
   resolveBatch(pid :IPieceId[]) :void;
 }
@@ -14,10 +15,10 @@ export class Pipe implements IPipe {
   private _from :IBuilding;
   private _to :IBuilding;
 
-  constructor(pipeMemory :PipeMemory, from ?:IBuilding, to ?:IBuilding) {
+  constructor(pipeMemory :PipeMemory, from :IBuilding, to :IBuilding) {
     this._model = pipeMemory;
-    this._from = from ?? new Building(pipeMemory.from);
-    this._to = to ?? new Building(pipeMemory.to);
+    this._from = from;
+    this._to = to;
   }
 
   get from() {
@@ -26,6 +27,10 @@ export class Pipe implements IPipe {
 
   get to() {
     return this._to;
+  }
+
+  getModel() :PipeMemory {
+    return this._model;
   }
 
   getBatch() {

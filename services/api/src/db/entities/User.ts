@@ -2,6 +2,7 @@ import * as crypto from 'crypto';
 import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { IUserMeta } from '@pipecraft/types';
 import { Peer } from './Peer';
+import { Manufacture } from './Manufacture';
 
 let globalSalt = 'NOT_SET_YEST';
 
@@ -56,6 +57,9 @@ export class User {
     comment: 'meta for the user',
   })
   meta :IUserMeta;
+
+  @OneToMany(() => Manufacture, manufacture => manufacture.owner)
+  manufactures :Manufacture[];
 
   @CreateDateColumn()
   createdAt :Date;

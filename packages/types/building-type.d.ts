@@ -31,8 +31,10 @@ export interface IBuildingRunResult {
   errorLogs ?:string[];
 }
 
+export type IBuildingGear = (args :IBuildingRunArgs) =>Promise<IBuildingRunResult>;
+
 export interface IBuildingTypeDescriptor {
-  runner :(args :IBuildingRunArgs) =>Promise<IBuildingRunResult>;
+  gear :IBuildingGear;
   memory ?:{
     entities :IBuildingMemory[];
     // eslint-disable-next-line @typescript-eslint/ban-types

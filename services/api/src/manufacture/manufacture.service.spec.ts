@@ -13,13 +13,17 @@ import { ManufactureService } from './manufacture.service';
 import { Manufacture } from '@/manufacture/Manufacture';
 import { Building } from '@/db/entities/Building';
 import { PipeMemory } from '@/db/entities/PipeMemory';
+import { Scheduler } from '@/db/entities/Scheduler';
+import { Manufacture as ManufactureModel } from '@/db/entities/Manufacture';
 
 
 describe('ManufactureService', () => {
   let service :ManufactureService;
   let testPrinterRepo :Repository<TestPrinter>;
+  let manufactureRepo :Repository<ManufactureModel>;
+
   const getDummyBuildingType = () :IBuildingTypeDescriptor => ({
-    runner: () => Promise.resolve({
+    gear: () => Promise.resolve({
       okResult: [],
       errorResult: [],
     }),
@@ -30,12 +34,18 @@ describe('ManufactureService', () => {
       providers: [ ManufactureService ],
       imports: [
         TypeOrmModule.forRoot(getTestDBConf()),
-        TypeOrmModule.forFeature([ TestPrinter, Building, PipeMemory ]),
+        TypeOrmModule.forFeature([ TestPrinter, Building, PipeMemory, Scheduler, ManufactureModel ]),
       ]
     }).compile();
 
     service = module.get<ManufactureService>(ManufactureService);
     testPrinterRepo = module.get<Repository<TestPrinter>>(getRepositoryToken(TestPrinter));
+    manufactureRepo = module.get<Repository<ManufactureModel>>(getRepositoryToken(ManufactureModel));
+  });
+
+  afterEach(async () => {
+    service.clearBuildingTypes();
+    await manufactureRepo.clear();
   });
 
   it('should be defined', () => {
@@ -73,8 +83,18 @@ describe('ManufactureService', () => {
     expect(service.hasBuildingType('test2')).toBe(false);
   });
 
+  it('build manufacture failure success', async() => {
+    expect(service.buildManufacture).toBeDefined();
+    const manufacture = await service.buildManufacture(1n) as Error;
+    expect(manufacture).toBeInstanceOf(Error);
+    expect(manufacture.message).toBe('Descriptor for minerTest does not exist');
+  });
+
   it('build manufacture', async() => {
     expect(service.buildManufacture).toBeDefined();
+    service.registerBuildingType('minerTest', getDummyBuildingType());
+    service.registerBuildingType('factoryTest', getDummyBuildingType());
+    service.registerBuildingType('printerTest', getDummyBuildingType());
     const manufacture = await service.buildManufacture(1n) as Manufacture;
     expect(manufacture).toBeInstanceOf(Manufacture);
     const buildings = manufacture.buildings;
@@ -83,6 +103,13 @@ describe('ManufactureService', () => {
     const pipes = manufacture.pipes;
     expect(pipes).toBeDefined();
     expect(pipes).toHaveLength(2);
+    const mid = await service.storeManufacture(manufacture);
+    const stored = await manufactureRepo.findOne({ where: { mid }});
+    expect(stored).toBeDefined();
+    // length of building should be 3
+    expect(stored!.buildings).toHaveLength(3);
+    // length of pipes should be 2
+    expect(stored!.pipes).toHaveLength(2);
   });
 
   it('check full pipe', async () => {
