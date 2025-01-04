@@ -45,7 +45,7 @@ describe('ManufactureService', () => {
 
   afterEach(async () => {
     service.clearBuildingTypes();
-    await manufactureRepo.clear();
+    await manufactureRepo.delete({});
   });
 
   it('should be defined', () => {

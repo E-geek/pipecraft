@@ -130,15 +130,7 @@ export class ManufactureService {
       manufacture.make();
     }
     model.title = title ?? model.title;
-    const waiter = [];
-    waiter.push(this._repoManufactures.save(model));
-    for (const building of model.buildings) {
-      waiter.push(this._repoBuildings.save(building));
-    }
-    for (const pipe of model.pipes) {
-      waiter.push(this._repoPipeMemories.save(pipe));
-    }
-    await Promise.all(waiter);
+    await this._repoManufactures.save(model);
     return model.mid;
   }
 }
