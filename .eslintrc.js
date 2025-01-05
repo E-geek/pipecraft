@@ -42,6 +42,10 @@ module.exports = {
           group: 'internal',
         },
         {
+          pattern: '@/db/**',
+          group: 'parent',
+        },
+        {
           pattern: '@/**',
           group: 'sibling',
         }

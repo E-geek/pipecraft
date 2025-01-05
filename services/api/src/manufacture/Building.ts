@@ -6,6 +6,7 @@ import { IManufactureElement } from '@/manufacture/IManufactureElement';
 
 export interface IBuilding extends IManufactureElement {
   type :'building';
+  readonly id :bigint;
   readonly config :BuildingRunConfig;
   readonly batchSize :string;
   readonly typeTitle :string;
@@ -41,6 +42,10 @@ export class Building implements IBuilding {
 
   getModel() :BuildingModel {
     return this._model;
+  }
+
+  get id() {
+    return this._model.bid;
   }
 
   get batchSize() {

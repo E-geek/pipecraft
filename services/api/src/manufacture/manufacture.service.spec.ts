@@ -7,15 +7,15 @@ import { Repository } from 'typeorm';
 
 import { IBuildingTypeDescriptor, IPiece } from '@pipecraft/types';
 
-import { TestPrinter } from '@/test/TestPrinter';
-import { getTestDBConf } from '@/test/db.conf';
-import { ManufactureService } from './manufacture.service';
-import { Manufacture } from '@/manufacture/Manufacture';
 import { Building } from '@/db/entities/Building';
 import { PipeMemory } from '@/db/entities/PipeMemory';
 import { Scheduler } from '@/db/entities/Scheduler';
 import { Manufacture as ManufactureModel } from '@/db/entities/Manufacture';
 import { Piece } from '@/db/entities/Piece';
+import { Manufacture } from '@/manufacture/Manufacture';
+import { ManufactureService } from './manufacture.service';
+import { getTestDBConf } from '@/test/db.conf';
+import { TestPrinter } from '@/test/TestPrinter';
 import { wait } from '@/helpers/async';
 
 

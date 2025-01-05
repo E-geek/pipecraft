@@ -3431,7 +3431,7 @@ __metadata:
     "@types/express": "npm:^4.17.17"
     "@types/jest": "npm:^29.5.2"
     "@types/jsonwebtoken": "npm:^9"
-    "@types/node": "npm:^20.3.1"
+    "@types/node": "npm:^22"
     "@types/pg": "npm:^8"
     "@types/supertest": "npm:^6.0.0"
     "@typescript-eslint/eslint-plugin": "npm:^6.0.0"
@@ -3475,7 +3475,7 @@ __metadata:
     "@storybook/react": "npm:^8.0.9"
     "@storybook/test": "npm:^8.0.9"
     "@svgr/webpack": "npm:6.5.1"
-    "@types/node": "npm:^20"
+    "@types/node": "npm:^22"
     "@types/react": "npm:^18"
     "@types/react-dom": "npm:^18"
     "@types/stylus": "npm:^0.48.43"
@@ -4758,12 +4758,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^20, @types/node@npm:^20.11.30, @types/node@npm:^20.3.1":
+"@types/node@npm:^20.11.30":
   version: 20.17.10
   resolution: "@types/node@npm:20.17.10"
   dependencies:
     undici-types: "npm:~6.19.2"
   checksum: 10c0/458ec725319e57d4692cbb56d81f1a90f9074cef9ec185c59e6f6c557a3d2ded57c5e443b1e82eba923d53dda4db18797fb131ee6e46fdb3d7d2f54d54aaebe3
+  languageName: node
+  linkType: hard
+
+"@types/node@npm:^22":
+  version: 22.10.5
+  resolution: "@types/node@npm:22.10.5"
+  dependencies:
+    undici-types: "npm:~6.20.0"
+  checksum: 10c0/6a0e7d1fe6a86ef6ee19c3c6af4c15542e61aea2f4cee655b6252efb356795f1f228bc8299921e82924e80ff8eca29b74d9dd0dd5cc1a90983f892f740b480df
   languageName: node
   linkType: hard
 

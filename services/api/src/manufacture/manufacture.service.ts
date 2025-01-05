@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { IBuildingTypeDescriptor, IPiece, Json, JsonMap, Nullable } from '@pipecraft/types';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Manufacture } from '@/manufacture/Manufacture';
 import { Building as BuildingModel } from '@/db/entities/Building';
 import { PipeMemory as PipeModel } from '@/db/entities/PipeMemory';
 import { Manufacture as ManufactureModel } from '@/db/entities/Manufacture';
 import { Piece as PieceModel } from '@/db/entities/Piece';
+import { Manufacture } from '@/manufacture/Manufacture';
 import { IPipe, Pipe } from '@/manufacture/Pipe';
 import { Building, IBuilding } from '@/manufacture/Building';
 
@@ -127,7 +127,12 @@ export class ManufactureService {
           return Error(`Building for pipe ${pipe.pmid} not exists ${pipe.from.bid} -> ${pipe.to.bid};\
             Problem with ${from ? '' : 'from'}${!from && !to ? ', ' : ''}${to ? '' : 'to'}`);
         }
-        const currentPipe = new Pipe(pipe, from, to);
+        const currentPipe = new Pipe({
+          pipeMemory: pipe,
+          from,
+          to,
+          heap: this._repoPieces,
+        });
         manufacture.registerPipe(currentPipe);
         registeredPipes.set(pipe.pmid, currentPipe);
       }

@@ -1,9 +1,8 @@
 import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
-import { Nullable, Opaque } from '@pipecraft/types';
+import { IPieceId, Nullable, Opaque } from '@pipecraft/types';
 import { Building } from './Building';
 import { Manufacture } from './Manufacture';
 
-export type IPieceId = Opaque<bigint, 'pieceId'>;
 export type IAttempts = Opaque<number, 'attempts'>;
 export type IReturnedPiece = [IPieceId, IAttempts];
 export type IReturnedPieces = IReturnedPiece[];
@@ -94,7 +93,7 @@ export class PipeMemory {
     default: [],
     comment: 'Pieces hold for processing now'
   })
-  reserved :bigint[];
+  reserved :IPieceId[];
 
   @Column({
     array: true,
