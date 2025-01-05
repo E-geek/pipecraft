@@ -1,16 +1,17 @@
-import { IBuildingGear, IBuildingRunResult, IPiece } from '@pipecraft/types';
+import { IBuildingGear, IBuildingPushFunction, IBuildingRunResult, IPiece } from '@pipecraft/types';
 import { Building as BuildingModel } from '@/db/entities/Building';
 import { BuildingType } from '@/db/entities/BuildingType';
 import { BuildingRunConfig } from '@/db/entities/BuildingRunConfig';
 import { IManufactureElement } from '@/manufacture/IManufactureElement';
 
 export interface IBuilding extends IManufactureElement {
+  type :'building';
   readonly config :BuildingRunConfig;
   readonly batchSize :string;
   readonly typeTitle :string;
   readonly isMiner :boolean;
   getModel() :BuildingModel;
-  type :'building';
+  run(push :IBuildingPushFunction, input ?:IPiece[]) :Promise<IBuildingRunResult>;
 }
 
 export class Building implements IBuilding {
@@ -28,12 +29,10 @@ export class Building implements IBuilding {
     this.config = building.lastRunConfig;
   }
 
-  public run(input :IPiece[] = []) :Promise<IBuildingRunResult> {
+  public run(push :IBuildingPushFunction, input :IPiece[] = []) :Promise<IBuildingRunResult> {
     return this._gear({
       input,
-      push: (piece :IPiece) => {
-        // push piece to next building or pipe
-      },
+      push,
       runConfig: this._model.lastRunConfig.runConfig,
       typeMeta: this._type.meta,
       buildingMeta: this._model.meta,

@@ -15,6 +15,7 @@ import { Building } from '@/db/entities/Building';
 import { PipeMemory } from '@/db/entities/PipeMemory';
 import { Scheduler } from '@/db/entities/Scheduler';
 import { Manufacture as ManufactureModel } from '@/db/entities/Manufacture';
+import { Piece } from '@/db/entities/Piece';
 import { wait } from '@/helpers/async';
 
 
@@ -35,7 +36,7 @@ describe('ManufactureService', () => {
       providers: [ ManufactureService ],
       imports: [
         TypeOrmModule.forRoot(getTestDBConf()),
-        TypeOrmModule.forFeature([ TestPrinter, Building, PipeMemory, Scheduler, ManufactureModel ]),
+        TypeOrmModule.forFeature([ TestPrinter, Building, PipeMemory, Scheduler, ManufactureModel, Piece ]),
       ]
     }).compile();
 

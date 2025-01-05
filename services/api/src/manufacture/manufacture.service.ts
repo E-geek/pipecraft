@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { IBuildingTypeDescriptor, Json, JsonMap, Nullable } from '@pipecraft/types';
+import { IBuildingTypeDescriptor, IPiece, Json, JsonMap, Nullable } from '@pipecraft/types';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Manufacture } from '@/manufacture/Manufacture';
 import { Building as BuildingModel } from '@/db/entities/Building';
 import { PipeMemory as PipeModel } from '@/db/entities/PipeMemory';
 import { Manufacture as ManufactureModel } from '@/db/entities/Manufacture';
+import { Piece as PieceModel } from '@/db/entities/Piece';
 import { IPipe, Pipe } from '@/manufacture/Pipe';
 import { Building, IBuilding } from '@/manufacture/Building';
 
@@ -22,16 +23,29 @@ export class ManufactureService {
   private readonly _repoPipeMemories :Repository<PipeModel>;
 
   private readonly _repoManufactures :Repository<ManufactureModel>;
+  //piece repo
+  private readonly _repoPieces :Repository<PieceModel>;
 
   constructor(
     @InjectRepository(BuildingModel) repoBuildings :Repository<BuildingModel>,
     @InjectRepository(PipeModel) repoPipeMemories :Repository<PipeModel>,
     @InjectRepository(ManufactureModel) repoManufactures :Repository<ManufactureModel>,
+    @InjectRepository(PieceModel) repoPieces :Repository<PieceModel>,
   ) {
     this._repoBuildings = repoBuildings;
     this._repoPipeMemories = repoPipeMemories;
     this._repoManufactures = repoManufactures;
+    this._repoPieces = repoPieces;
   }
+
+  private onReceive = (from :BuildingModel, pieces :IPiece[]) => {
+    const awaiter :Promise<unknown>[] = [];
+    for (const piece of pieces) {
+      const pieceModel = new PieceModel(from, piece);
+      awaiter.push(this._repoPieces.save(pieceModel));
+    }
+    return Promise.allSettled(awaiter);
+  };
 
   public startFromMining(minerId :bigint, options :IRunManufactureOptions) {
   }
@@ -67,7 +81,7 @@ export class ManufactureService {
   }
 
   public async buildManufacture(startBuildingId :bigint) :Promise<Manufacture | Error> {
-    const manufacture = new Manufacture();
+    const manufacture = new Manufacture(this.onReceive);
     const startBuildingModel = await this._repoBuildings.findOne({ where: { bid: startBuildingId }});
     const startBuilding = this.makeBuildingByModel(startBuildingModel);
     if (startBuilding instanceof Error) {

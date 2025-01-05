@@ -1,7 +1,7 @@
 import { MixedList } from 'typeorm/common/MixedList';
 import { JsonMap } from './json';
 import { IPiece, IPieceId } from './piece';
-import { OrPromise } from './basic';
+import { Promisable } from './basic';
 import { IBuildingMemory } from './building-memory';
 import { IBuildingRunConfigMeta } from './building-run-config';
 import { IBuildingMeta } from './building';
@@ -12,9 +12,11 @@ export interface IBuildingTypeMeta extends JsonMap {
   type :IBuildingTypeType; 
 }
 
+export type IBuildingPushFunction<OutputType = IPiece> = (pieces :OutputType[]) =>Promisable<void>;
+
 export interface IBuildingRunArgs<InputType = IPiece, OutputType = IPiece> {
   // function for push new pieces
-  push :(pieces :OutputType[]) =>OrPromise<void>;
+  push :IBuildingPushFunction<OutputType>;
   // config for current runner from Building.meta
   buildingMeta :IBuildingMeta;
   // runConfig from BuildingRunConfig

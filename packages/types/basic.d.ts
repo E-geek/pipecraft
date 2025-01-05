@@ -14,7 +14,7 @@ export type ArrayableNullable<T> = Nullable<Arrayable<T>>;
 
 export type Primitive = string | number | bigint | boolean | symbol | null | undefined;
 
-export type OrPromise<T> = T | Promise<T>;
+export type Promisable<T> = T | Promise<T>;
 
 /**
  * @link https://stackoverflow.com/questions/65577843/mutually-exclusive-props-in-a-react-component

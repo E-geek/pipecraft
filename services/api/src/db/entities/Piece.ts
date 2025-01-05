@@ -34,4 +34,13 @@ export class Piece {
 
   })
   data :IPiece;
+
+  constructor(from ?:Building, data ?:IPiece) {
+    if (from != null) {
+      this.from = Promise.resolve(from);
+    }
+    if (data != null) {
+      this.data = data;
+    }
+  }
 }

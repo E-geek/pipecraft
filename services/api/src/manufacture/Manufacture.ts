@@ -1,7 +1,8 @@
-import { IBuildingRunResult, Nullable } from '@pipecraft/types';
+import { IBuildingRunResult, IPiece, Nullable } from '@pipecraft/types';
 import { IBuilding } from '@/manufacture/Building';
 import { IPipe } from '@/manufacture/Pipe';
 import { Manufacture as ManufactureModel } from '@/db/entities/Manufacture';
+import { Building as BuildingModel } from '@/db/entities/Building';
 
 export interface IManufacture {
   buildings :IBuilding[];
@@ -13,18 +14,22 @@ export interface IManufacture {
   make() :void;
 }
 
+export type IManufactureOnReceive = (from :BuildingModel, pieces :IPiece[]) =>Promise<any>;
+
 export class Manufacture implements IManufacture {
   private _pipes :Set<IPipe>;
   private _buildings :Set<IBuilding>;
   private _cursor = 0;
   private _model :Nullable<ManufactureModel>;
   private _loop :(IPipe|IBuilding)[];
+  private _onReceive :IManufactureOnReceive;
 
-  constructor(model :Nullable<ManufactureModel> = null) {
+  constructor(onReceive :IManufactureOnReceive, model :Nullable<ManufactureModel> = null) {
     this._pipes = new Set();
     this._buildings = new Set();
     this._loop = [];
     this._model = model;
+    this._onReceive = onReceive;
   }
 
   getModel() {
@@ -72,7 +77,9 @@ export class Manufacture implements IManufacture {
   }
 
   private minerTick(miner :IBuilding) {
-    return { okResult: []};
+    return miner.run((pieces) => {
+      return this._onReceive(miner.getModel(), pieces);
+    });
   }
 
   private pipeTick(pipe :IPipe) {
@@ -80,7 +87,11 @@ export class Manufacture implements IManufacture {
   }
 
   public async tick() :Promise<IBuildingRunResult | Error> {
-    const element = this._loop[this._cursor];
+    const cursor = this._cursor++;
+    if (this._cursor >= this._loop.length) {
+      this._cursor = 0;
+    }
+    const element = this._loop[cursor];
     if (!element) {
       return new Error('No elements in loop, maybe `make` are skipped?');
     }
