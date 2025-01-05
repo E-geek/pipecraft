@@ -1,4 +1,4 @@
-import { Nullable } from '@pipecraft/types';
+import { IBuildingRunResult, Nullable } from '@pipecraft/types';
 import { IBuilding } from '@/manufacture/Building';
 import { IPipe } from '@/manufacture/Pipe';
 import { Manufacture as ManufactureModel } from '@/db/entities/Manufacture';
@@ -18,7 +18,7 @@ export class Manufacture implements IManufacture {
   private _buildings :Set<IBuilding>;
   private _cursor = 0;
   private _model :Nullable<ManufactureModel>;
-  private _loop :IPipe[];
+  private _loop :(IPipe|IBuilding)[];
 
   constructor(model :Nullable<ManufactureModel> = null) {
     this._pipes = new Set();
@@ -44,12 +44,13 @@ export class Manufacture implements IManufacture {
   }
 
   /**
-   * after registration every building and pipe create loop of pipes
+   * after registration every building and pipe create loop of pipes and miners
    * - and -
    * setup model of manufacture BUT NOT SAVE IT
    */
   make() {
     this._loop.length = 0;
+    this._loop.push(...this.buildings.filter(building => building.isMiner));
     for (const pipe of this._pipes) {
       this._loop.push(pipe);
     }
@@ -68,6 +69,28 @@ export class Manufacture implements IManufacture {
       model.manufacture = Promise.resolve(this._model);
       this._model.buildings.push(model);
     }
+  }
+
+  private minerTick(miner :IBuilding) {
+    return { okResult: []};
+  }
+
+  private pipeTick(pipe :IPipe) {
+    return { okResult: []};
+  }
+
+  public async tick() :Promise<IBuildingRunResult | Error> {
+    const element = this._loop[this._cursor];
+    if (!element) {
+      return new Error('No elements in loop, maybe `make` are skipped?');
+    }
+    if (element.type === 'building') {
+      return this.minerTick(element);
+    }
+    if (element.type === 'pipe') {
+      return this.pipeTick(element);
+    }
+    return { okResult: []};
   }
 
   public get buildings() {

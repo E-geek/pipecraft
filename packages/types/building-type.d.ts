@@ -12,9 +12,9 @@ export interface IBuildingTypeMeta extends JsonMap {
   type :IBuildingTypeType; 
 }
 
-export interface IBuildingRunArgs {
+export interface IBuildingRunArgs<InputType = IPiece, OutputType = IPiece> {
   // function for push new pieces
-  push :(pieces :IPiece[]) =>OrPromise<void>;
+  push :(pieces :OutputType[]) =>OrPromise<void>;
   // config for current runner from Building.meta
   buildingMeta :IBuildingMeta;
   // runConfig from BuildingRunConfig
@@ -22,7 +22,7 @@ export interface IBuildingRunArgs {
   // meta of the type
   typeMeta :IBuildingTypeMeta;
   // inputPieces
-  input :IPiece[];
+  input :InputType[];
 }
 
 export interface IBuildingRunResult {
@@ -31,10 +31,10 @@ export interface IBuildingRunResult {
   errorLogs ?:string[];
 }
 
-export type IBuildingGear = (args :IBuildingRunArgs) =>Promise<IBuildingRunResult>;
+export type IBuildingGear<InputType = IPiece, OutputType = IPiece> = (args :IBuildingRunArgs<InputType, OutputType>) =>Promise<IBuildingRunResult>;
 
-export interface IBuildingTypeDescriptor {
-  gear :IBuildingGear;
+export interface IBuildingTypeDescriptor<InputType = IPiece, OutputType = IPiece> {
+  gear :IBuildingGear<InputType, OutputType>;
   memory ?:{
     entities :IBuildingMemory[];
     // eslint-disable-next-line @typescript-eslint/ban-types

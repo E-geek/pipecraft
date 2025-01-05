@@ -5,7 +5,7 @@ import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Repository } from 'typeorm';
 
-import { IBuildingTypeDescriptor } from '@pipecraft/types';
+import { IBuildingTypeDescriptor, IPiece } from '@pipecraft/types';
 
 import { TestPrinter } from '@/test/TestPrinter';
 import { getTestDBConf } from '@/test/db.conf';
@@ -15,6 +15,7 @@ import { Building } from '@/db/entities/Building';
 import { PipeMemory } from '@/db/entities/PipeMemory';
 import { Scheduler } from '@/db/entities/Scheduler';
 import { Manufacture as ManufactureModel } from '@/db/entities/Manufacture';
+import { wait } from '@/helpers/async';
 
 
 describe('ManufactureService', () => {
@@ -110,6 +111,56 @@ describe('ManufactureService', () => {
     expect(stored!.buildings).toHaveLength(3);
     // length of pipes should be 2
     expect(stored!.pipes).toHaveLength(2);
+  });
+
+  it('simple run manufacture', async() => {
+    type IPieceLocal = IPiece & { data :number };
+    let processed = 0;
+    const result :IPieceLocal[] = [];
+    const minerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceLocal> = {
+      gear: async (args) => {
+        args.push([{ data: 1 }]);
+        await wait(0);
+        processed |= 0x1;
+        return { okResult: []};
+      }
+    };
+    const factoryDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceLocal> = {
+      gear: async (args ) => {
+        const input = args.input;
+        for (const piece of input) {
+          args.push([{ data: piece.data + 1 }]);
+        }
+        await wait(0);
+        processed |= 0x2;
+        return { okResult: []};
+      }
+    };
+    const printerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceLocal> = {
+      gear: async (args) => {
+        const input = args.input;
+        for (const piece of input) {
+          result.push({ data: piece.data + 1 });
+          args.push([{ data: piece.data + 1 }]);
+        }
+        await wait(0);
+        processed |= 0x4;
+        return { okResult: []};
+      }
+    };
+    service.registerBuildingType('minerTest', minerDescriptor);
+    service.registerBuildingType('factoryTest', factoryDescriptor);
+    service.registerBuildingType('printerTest', printerDescriptor);
+    const manufacture = await service.buildManufacture(1n) as Manufacture;
+    expect(manufacture).toBeInstanceOf(Manufacture);
+    await manufacture.tick();
+    expect(processed).toBe(0x1);
+    await manufacture.tick();
+    expect(processed).toBe(0x3);
+    await manufacture.tick();
+    expect(processed).toBe(0x7);
+    expect(result).toHaveLength(1);
+    expect(result).toMatchObject([{ data: 3 }]);
   });
 
   it('check full pipe', async () => {
