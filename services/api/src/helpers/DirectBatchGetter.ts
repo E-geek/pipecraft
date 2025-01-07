@@ -15,7 +15,7 @@ export class DirectBatchGetter extends BatchGetter {
     }
     const result :IPieceId[] = [];
     const cursor = this._firstCursor;
-    if (cursor !== -1n) { // not init
+    if (cursor !== -1n) { // init has done
       let added = 0;
       for (const pointer of this._heapList) {
         if (pointer >= cursor) {
@@ -49,7 +49,7 @@ export class DirectBatchGetter extends BatchGetter {
       this._recycleList.delete(candidate);
     }
     if (result.length === size) {
-      return result;
+      return result.sort(sort);
     }
     for (const candidate of this._heapList.difference(this._holdList)) {
       if (result.length === size) {
@@ -58,8 +58,8 @@ export class DirectBatchGetter extends BatchGetter {
       if (candidate <= this._lastCursor) {
         continue;
       }
-      this._lastCursor = candidate;
       result.push(candidate);
+      this._lastCursor = candidate;
       this._holdList.add(candidate);
     }
     return result.sort(sort);
