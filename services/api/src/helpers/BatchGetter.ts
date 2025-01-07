@@ -33,11 +33,23 @@ export abstract class BatchGetter {
    * release ids from hold
    * @param ids
    */
-  abstract release(ids :IPieceId[]) :void;
+  release(ids :IPieceId[]) :void {
+    for (let i = 0; i < ids.length; i++){
+      const id = ids[i];
+      this._holdList.delete(id); // Remove IDs from hold list
+    }
+  }
 
   /**
    * recycle ids (on fail or when skipped)
+   * release these ids from hold
    * @param ids
    */
-  abstract recycle(ids :IPieceId[]) :void;
+  recycle(ids :IPieceId[]) :void {
+    for (let i = 0; i < ids.length; i++) {
+      const id = ids[i];
+      this._recycleList.add(id); // Add IDs directly to recycle list
+      this._holdList.delete(id);
+    }
+  }
 }

@@ -7,21 +7,11 @@ export class ReverseBatchGetter extends BatchGetter {
   }
 
   getBatch(size :number) :IPieceId[] {
+    if (this._heapList.size === 0 && this._recycleList.size === 0) {
+      return [];
+    }
     const result :IPieceId[] = [];
+    const cursor = this._lastCursor;
     return result;
-  }
-
-  release(ids :IPieceId[]) :void {
-    for (let i = 0; i < ids.length; i++) {
-      const id = ids[i];
-      this._holdList.delete(id);
-    }
-  }
-
-  recycle(ids :IPieceId[]) :void {
-    for (let i = 0; i < ids.length; i++) {
-      const id = ids[i];
-      this._recycleList.add(id);
-    }
   }
 }

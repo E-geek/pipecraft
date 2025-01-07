@@ -64,22 +64,4 @@ export class DirectBatchGetter extends BatchGetter {
     }
     return result.sort(sort);
   }
-
-  release(ids :IPieceId[]) :void {
-    ids.forEach((id) => {
-      this._holdList.delete(id); // Remove IDs from hold list
-    });
-  }
-
-  /**
-   * recycle ids (on fail or when skipped)
-   * release these ids from hold
-   * @param ids
-   */
-  recycle(ids :IPieceId[]) :void {
-    ids.forEach((id) => {
-      this._recycleList.add(id); // Add IDs directly to recycle list
-      this._holdList.delete(id);
-    });
-  }
 }
