@@ -13,55 +13,22 @@ export class DirectBatchGetter extends BatchGetter {
     if (this._heapList.size === 0 && this._recycleList.size === 0) {
       return [];
     }
-    const result :IPieceId[] = [];
     const cursor = this._firstCursor;
     if (cursor !== -1n) { // init has done
-      let added = 0;
-      for (const pointer of this._heapList) {
-        if (pointer >= cursor) {
-          break;
-        }
-        added++;
-        this._recycleList.add(pointer);
-      }
-      // main way: entry to condition, check for first is first, done
+      const added = this._recycleFromPointerToEnd(cursor, this._heapList, 'direct');
       if (added > 0) {
-        // must be sorted
-        const sortedRecycleList = Array.from(this._recycleList).sort(sort);
-        // refill recycle list
-        this._recycleList.clear();
-        for (const pointer of sortedRecycleList) {
-          this._recycleList.add(pointer);
-        }
-        this._firstCursor = sortedRecycleList[0] || -1n as IPieceId;
+        this._firstCursor = this._actualRecycleList(sort);
       }
     } else {
       const firstValueOfRecycle = this._recycleList.values().next().value ?? -1n as IPieceId;
       const firstValueOfHeap = this._heapList.values().next().value ?? -1n as IPieceId;
       this._firstCursor = firstValueOfHeap < firstValueOfRecycle ? firstValueOfHeap : firstValueOfRecycle;
     }
-    for (const candidate of this._recycleList.difference(this._holdList)) {
-      if (result.length === size) {
-        break;
-      }
-      result.push(candidate);
-      this._holdList.add(candidate);
-      this._recycleList.delete(candidate);
-    }
+    const result = this._getResultFromRecycleList(size);
     if (result.length === size) {
       return result.sort(sort);
     }
-    for (const candidate of this._heapList.difference(this._holdList)) {
-      if (result.length === size) {
-        break;
-      }
-      if (candidate <= this._lastCursor) {
-        continue;
-      }
-      result.push(candidate);
-      this._lastCursor = candidate;
-      this._holdList.add(candidate);
-    }
+    this._lastCursor = this._fillResultFromHeap(size, result, this._heapList, this._lastCursor);
     return result.sort(sort);
   }
 }
