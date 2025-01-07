@@ -1,41 +1,68 @@
 import { IPieceId } from '@pipecraft/types';
 import { BatchGetter, IBatchGetterProps } from './BatchGetter';
 
+const sort = (a :IPieceId, b :IPieceId) => a > b ? 1 : -1;
+
 export class DirectBatchGetter extends BatchGetter {
-  private _cursor :IPieceId;
 
   constructor(args :IBatchGetterProps) {
     super(args);
-    this._cursor = args.firstCursor; // Start cursor from `firstCursor`
   }
 
   getBatch(size :number) :IPieceId[] {
+    if (this._heapList.size === 0 && this._recycleList.size === 0) {
+      return [];
+    }
     const result :IPieceId[] = [];
-
-    // Step 1: Consume IDs from the recycle list
-    for (const id of this._recycleList) {
-      if (result.length >= size) break;
-      this._recycleList.delete(id);
-      this._holdList.add(id);
-      result.push(id);
-    }
-
-    // Step 2: Consume IDs from the heap list sequentially, respecting the cursor
-    const sortedHeap = Array.from(this._heapList).sort((a, b) => (a < b ? -1 : 1));
-    for (const id of sortedHeap) {
-      if (result.length >= size) break;
-      if (id > this._cursor && !this._holdList.has(id)) {
-        this._holdList.add(id);
-        result.push(id);
+    const cursor = this._firstCursor;
+    if (cursor !== -1n) { // not init
+      let added = 0;
+      for (const pointer of this._heapList) {
+        if (pointer >= cursor) {
+          break;
+        }
+        added++;
+        this._recycleList.add(pointer);
       }
+      // main way: entry to condition, check for first is first, done
+      if (added > 0) {
+        // must be sorted
+        const sortedRecycleList = Array.from(this._recycleList).sort(sort);
+        // refill recycle list
+        this._recycleList.clear();
+        for (const pointer of sortedRecycleList) {
+          this._recycleList.add(pointer);
+        }
+        this._firstCursor = sortedRecycleList[0] || -1n as IPieceId;
+      }
+    } else {
+      const firstValueOfRecycle = this._recycleList.values().next().value ?? -1n as IPieceId;
+      const firstValueOfHeap = this._heapList.values().next().value ?? -1n as IPieceId;
+      this._firstCursor = firstValueOfHeap < firstValueOfRecycle ? firstValueOfHeap : firstValueOfRecycle;
     }
-
-    // Step 3: Update the cursor if new IDs were fetched
-    if (result.length > 0) {
-      this._cursor = result[result.length - 1]; // Move cursor to the last fetched ID
+    for (const candidate of this._recycleList.difference(this._holdList)) {
+      if (result.length === size) {
+        break;
+      }
+      result.push(candidate);
+      this._holdList.add(candidate);
+      this._recycleList.delete(candidate);
     }
-
-    return result;
+    if (result.length === size) {
+      return result;
+    }
+    for (const candidate of this._heapList.difference(this._holdList)) {
+      if (result.length === size) {
+        break;
+      }
+      if (candidate <= this._lastCursor) {
+        continue;
+      }
+      this._lastCursor = candidate;
+      result.push(candidate);
+      this._holdList.add(candidate);
+    }
+    return result.sort(sort);
   }
 
   release(ids :IPieceId[]) :void {
@@ -44,9 +71,15 @@ export class DirectBatchGetter extends BatchGetter {
     });
   }
 
+  /**
+   * recycle ids (on fail or when skipped)
+   * release these ids from hold
+   * @param ids
+   */
   recycle(ids :IPieceId[]) :void {
     ids.forEach((id) => {
       this._recycleList.add(id); // Add IDs directly to recycle list
+      this._holdList.delete(id);
     });
   }
 }
