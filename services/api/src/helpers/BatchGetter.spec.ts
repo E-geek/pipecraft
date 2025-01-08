@@ -1,4 +1,5 @@
 import { IPieceId } from '@pipecraft/types';
+import { IAttempts } from '@/db/entities/PipeMemory';
 import { DirectBatchGetter } from '@/helpers/DirectBatchGetter';
 import { ReverseBatchGetter } from '@/helpers/ReverseBatchGetter';
 
@@ -11,9 +12,13 @@ describe('BatchGetter', () => {
     return result;
   };
 
+  const getNotEmptyRecycleSource = () :[IPieceId, IAttempts][] => {
+    return [[ 44n, 1 ], [ 55n, 1 ], [ 70n, 1 ], [ 77n, 1 ]] as [IPieceId, IAttempts][];
+  };
+
   it('test simple direct batch getter', () => {
     const holdList = new Set<IPieceId>();
-    const recycleList = new Set<IPieceId>();
+    const recycleList = new Map<IPieceId, IAttempts>();
     const heapList = new Set(getListIds(10));
     const batchGetter = new DirectBatchGetter({
       firstCursor: -1n as IPieceId,
@@ -54,7 +59,7 @@ describe('BatchGetter', () => {
 
   it('test "real" direct batch getter', () => {
     const holdList = new Set<IPieceId>([ 33n, 77n ] as IPieceId[]);
-    const recycleList = new Set<IPieceId>([ 44n, 55n, 70n, 77n ] as IPieceId[]);
+    const recycleList = new Map<IPieceId, IAttempts>(getNotEmptyRecycleSource() );
     const heapList =
       new Set(getListIds(10))
       .union(
@@ -93,7 +98,7 @@ describe('BatchGetter', () => {
   // similar tests for ReverseBatchGetter
   it('test simple reverse batch getter', () => {
     const holdList = new Set<IPieceId>();
-    const recycleList = new Set<IPieceId>();
+    const recycleList = new Map<IPieceId, IAttempts>();
     const heapList = new Set(getListIds(10));
     const batchGetter = new ReverseBatchGetter({
       firstCursor: -1n as IPieceId,
@@ -134,7 +139,7 @@ describe('BatchGetter', () => {
 
   it('test "real" reverse batch getter', () => {
     const holdList = new Set<IPieceId>([ 33n, 77n ] as IPieceId[]);
-    const recycleList = new Set<IPieceId>([ 44n, 55n, 70n, 77n ] as IPieceId[]);
+    const recycleList = new Map<IPieceId, IAttempts>(getNotEmptyRecycleSource());
     const heapList =
       new Set(getListIds(10))
       .union(

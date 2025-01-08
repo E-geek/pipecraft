@@ -1,28 +1,51 @@
 import { IPieceId } from '@pipecraft/types';
+import { IAttempts } from '@/db/entities/PipeMemory';
 
 export interface IBatchGetterProps {
   firstCursor :IPieceId;
   lastCursor :IPieceId;
   holdList :Set<IPieceId>;
   heapList :Set<IPieceId>;
-  recycleList :Set<IPieceId>;
+  recycleList :Map<IPieceId, IAttempts>;
 }
 
 export type IHeapLike = Set<IPieceId>|Array<IPieceId>;
 
-export abstract class BatchGetter {
+export interface IBatchGetter {
+  readonly firstCursor :IPieceId;
+  readonly lastCursor :IPieceId;
+  getBatch(size :number) :IPieceId[];
+  release(ids :IPieceId[]) :void;
+  recycle(ids :IPieceId[]) :void;
+}
+
+export abstract class BatchGetter implements IBatchGetter {
   protected _firstCursor :IPieceId;
   protected _lastCursor :IPieceId;
   protected _holdList :Set<IPieceId>;
   protected _heapList :Set<IPieceId>;
-  protected _recycleList :Set<IPieceId>;
+  protected _recycleList :Map<IPieceId, IAttempts>;
 
-  constructor(args :IBatchGetterProps) {
+  protected constructor(args :IBatchGetterProps) {
     this._firstCursor = args.firstCursor;
     this._lastCursor = args.lastCursor;
     this._holdList = args.holdList;
     this._heapList = args.heapList;
     this._recycleList = args.recycleList;
+  }
+
+  /**
+   * getter for firstCursor current value
+   */
+  get firstCursor() :IPieceId {
+    return this._firstCursor;
+  }
+
+  /**
+   * getter for lastCursor current value
+   */
+  get lastCursor() :IPieceId {
+    return this._lastCursor;
   }
 
   /**
@@ -45,12 +68,13 @@ export abstract class BatchGetter {
   /**
    * recycle ids (on fail or when skipped)
    * release these ids from hold
-   * @param ids
+   * @param ids IPieceId[]
    */
   public recycle(ids :IPieceId[]) :void {
     for (let i = 0; i < ids.length; i++) {
       const id = ids[i];
-      this._recycleList.add(id); // Add IDs directly to recycle list
+      const attempts = ((this._recycleList.get(id) ?? 0) + 1) as IAttempts;
+      this._recycleList.set(id, attempts); // Add IDs directly to recycle list
       this._holdList.delete(id);
     }
   }
@@ -65,24 +89,25 @@ export abstract class BatchGetter {
         break;
       }
       added++;
-      this._recycleList.add(pointer);
+      this._recycleList.set(pointer, 0 as IAttempts);
     }
     return added;
   }
 
-  protected _actualRecycleList(sort :(a :IPieceId, b :IPieceId) =>number) {
+  protected _actualRecycleList(sort :(a :[IPieceId, IAttempts], b :[IPieceId, IAttempts]) =>number) {
     const sortedRecycleList = Array.from(this._recycleList).sort(sort);
     // refill recycle list
     this._recycleList.clear();
-    for (const pointer of sortedRecycleList) {
-      this._recycleList.add(pointer);
+    for (const [ pointer, attempts ] of sortedRecycleList) {
+      this._recycleList.set(pointer, attempts);
     }
-    return sortedRecycleList[0] || -1n as IPieceId;
+    return (sortedRecycleList[0] ?? [ -1n as IPieceId ])[0] || -1n as IPieceId;
   }
 
   protected _getResultFromRecycleList(size :number) {
     const result :IPieceId[] = [];
-    for (const candidate of this._recycleList.difference(this._holdList)) {
+    const recycleSet = new Set(this._recycleList.keys());
+    for (const candidate of recycleSet.difference(this._holdList)) {
       if (result.length === size) {
         break;
       }

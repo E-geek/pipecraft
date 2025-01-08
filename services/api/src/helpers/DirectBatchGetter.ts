@@ -1,6 +1,8 @@
 import { IPieceId } from '@pipecraft/types';
+import { IAttempts } from '@/db/entities/PipeMemory';
 import { BatchGetter, IBatchGetterProps } from './BatchGetter';
 
+const sortMap = ([ a ] :[IPieceId, IAttempts], [ b ] :[IPieceId, IAttempts]) => a > b ? 1 : -1;
 const sort = (a :IPieceId, b :IPieceId) => a > b ? 1 : -1;
 
 export class DirectBatchGetter extends BatchGetter {
@@ -17,7 +19,7 @@ export class DirectBatchGetter extends BatchGetter {
     if (cursor !== -1n) { // init has done
       const added = this._recycleFromPointerToEnd(cursor, this._heapList, 'direct');
       if (added > 0) {
-        this._firstCursor = this._actualRecycleList(sort);
+        this._firstCursor = this._actualRecycleList(sortMap);
       }
     } else {
       const firstValueOfRecycle = this._recycleList.values().next().value ?? -1n as IPieceId;
