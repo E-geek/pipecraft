@@ -1,22 +1,31 @@
 import { IPiece, IPieceId } from '@pipecraft/types';
-import { And, FindManyOptions, FindOperator, LessThan, MoreThan, Or, Repository } from 'typeorm';
+import { FindManyOptions, FindOperator, In, LessThan, MoreThan, Or, Repository } from 'typeorm';
 import { FindOptionsWhere } from 'typeorm/find-options/FindOptionsWhere';
-import { IReturnedPieces, PipeMemory } from '@/db/entities/PipeMemory';
+import { IAttempts, PipeMemory } from '@/db/entities/PipeMemory';
 import { Piece } from '@/db/entities/Piece';
 import { IBuilding } from '@/manufacture/Building';
 import { IManufactureElement } from '@/manufacture/IManufactureElement';
+import { IBatchGetter } from '@/helpers/BatchGetter';
+import { DirectBatchGetter } from '@/helpers/DirectBatchGetter';
+import { ReverseBatchGetter } from '@/helpers/ReverseBatchGetter';
 
 export interface IPipe extends IManufactureElement {
+  type :'pipe';
   from :IBuilding;
   to :IBuilding;
+  maxAttempts :IAttempts;
+  maxHistoryDepth :number;
+
+  make() :Promise<void>;
+  sync() :Promise<void>;
 
   getModel() :PipeMemory;
 
   getBatch() :Promise<IPiece[]>;
 
-  resolveBatch(pid :IPieceId[]) :void;
+  releaseBatch(pid :IPieceId[]) :void;
 
-  type :'pipe';
+  failBatch(pid :IPieceId[]) :void;
 }
 
 export interface IPipeParams {
@@ -31,6 +40,18 @@ export class Pipe implements IPipe {
   private readonly _from :IBuilding;
   private readonly _to :IBuilding;
   private readonly _heap :Repository<Piece>;
+  private readonly _batchSize :{
+    size :number;
+    isPercent :boolean;
+  };
+  private _batchGetter :IBatchGetter;
+
+  public readonly maxAttempts = 5 as IAttempts;
+  public readonly maxHistoryDepth = 1000 * 60 * 60 * 24 * 30 * 3; // 3 months
+
+  private _heapSet :Set<IPieceId>;
+  private _recycleMap :Map<IPieceId, IAttempts>;
+  private _holdSet :Set<IPieceId>;
 
   public type :IPipe['type'] = 'pipe';
 
@@ -39,6 +60,21 @@ export class Pipe implements IPipe {
     this._from = from;
     this._to = to;
     this._heap = heap;
+    // unpack batch data
+    const batchSizeRaw = this._to.batchSize;
+    const isPercent = batchSizeRaw[batchSizeRaw.length - 1] === '%';
+    const size = parseInt(batchSizeRaw, 10);
+    if (size === 0) {
+      this._batchSize = {
+        size: 100,
+        isPercent: true,
+      };
+    } else {
+      this._batchSize = {
+        size: size,
+        isPercent,
+      };
+    }
   }
 
   get from() {
@@ -53,19 +89,75 @@ export class Pipe implements IPipe {
     return this._model;
   }
 
-  private returnedToSet(returned :IReturnedPieces) :Set<IPieceId> {
-    const result = new Set<IPieceId>();
-    for (const [ pid, attempts ] of returned) {
-      if (attempts < 5) {
-        result.add(pid);
-      }
-    }
-    return result;
+  private async _getActualHeap() :Promise<IPieceId[]> {
+    const options = this._getWhereOptions();
+    const heap = await this._heap.find(options);
+    return heap.map(({ pid }) => pid);
   }
 
-  private getWhereOptions(
-    { ordering, firstCursor, lastCursor } :Pick<PipeMemory, 'ordering' | 'firstCursor' | 'lastCursor'>
-  ) :FindManyOptions<Piece> {
+  private async _buildBatchGetter() {
+    const { ordering, firstCursor, lastCursor } = this._model;
+    const heap = await this._getActualHeap();
+    if (heap.length === 0 && this._model.reserved.length === 0) {
+      return; // no pieces and no reserved
+    }
+    const heapSet = new Set(heap);
+    const recycleSet = new Map<IPieceId, IAttempts>(this._model.returned);
+    const holdSet = new Set(this._model.reserved);
+    if (ordering === 'direct') {
+      this._batchGetter = new DirectBatchGetter({
+        firstCursor: firstCursor as IPieceId,
+        lastCursor: lastCursor as IPieceId,
+        heapList: heapSet,
+        recycleList: recycleSet,
+        holdList: holdSet,
+      });
+    } else {
+      this._batchGetter = new ReverseBatchGetter({
+        firstCursor: firstCursor as IPieceId,
+        lastCursor: lastCursor as IPieceId,
+        heapList: heapSet,
+        recycleList: recycleSet,
+        holdList: holdSet,
+      });
+    }
+    this._heapSet = heapSet;
+    this._recycleMap = recycleSet;
+    this._holdSet = holdSet;
+  }
+
+  public async make() {
+    if (this._batchGetter) {
+      return;
+    }
+    await this._buildBatchGetter();
+  }
+
+  public async sync() {
+    await this._model.reload();
+    if (this._model.firstCursor !== (-1n as IPieceId)
+      && this._model.firstCursor < this._batchGetter.firstCursor
+      || this._model.lastCursor > this._batchGetter.lastCursor) {
+      // if async from DB then rebuild
+      console.error('Pipe sync failed: cursors changes outside current pipe');
+      await this._buildBatchGetter();
+      return;
+    }
+    this._model.firstCursor = this._batchGetter.firstCursor;
+    this._model.lastCursor = this._batchGetter.lastCursor;
+    this._model.reserved = [ ...this._holdSet ];
+    this._model.returned = [ ...this._recycleMap.entries() ];
+    await this._model.save();
+    const actualHeap = await this._getActualHeap();
+    for (let i = 0; i < actualHeap.length; i++){
+      const pieceId = actualHeap[i];
+      this._heapSet.add(pieceId);
+    }
+  }
+
+  private _getWhereOptions() :FindManyOptions<Piece> {
+    const from = this._from.id;
+    const { ordering, firstCursor, lastCursor } = this._model;
     const pidCondition :FindOperator<any>[] = [];
     if (firstCursor >= 0) {
       pidCondition.push(LessThan(firstCursor));
@@ -77,9 +169,9 @@ export class Pipe implements IPipe {
       select: [ 'pid' ],
       where: {
         from: {
-          bid: this._from.id,
+          bid: from,
         },
-        createdAt: MoreThan(new Date(Date.now() - 1000 * 60 * 60 * 24 * 30 * 3)),
+        createdAt: MoreThan(new Date(Date.now() - this.maxHistoryDepth)),
       },
       order: {
         pid: ordering === 'reverse' ? 'DESC' : 'ASC',
@@ -92,52 +184,28 @@ export class Pipe implements IPipe {
   }
 
   public async getBatch() :Promise<IPiece[]> {
-    const { ordering, firstCursor, lastCursor, reserved, returned } = this._model;
-    // parse batchSize value
-    const batchSizeRaw = this.to.batchSize;
-    const isPercentSizeBatch = batchSizeRaw.endsWith('%');
-    const batchSize = parseInt(batchSizeRaw, 10);
-    // select list id allowed for process
-    const returnedSet = this.returnedToSet(returned);
-    const reservedSet = new Set<IPieceId>(reserved);
-    const allowedForProcess = returnedSet.difference(reservedSet);
-    // get all allowed pids outside of the cursors
-    const options = this.getWhereOptions({ ordering, firstCursor, lastCursor });
-    const piecesCut = await this._heap.find(options);
-    const pids = piecesCut.map(({ pid }) => pid);
-    const requiredPieces = !isPercentSizeBatch
-      ? batchSize
-      : Math.ceil((pids.length + allowedForProcess.size) * batchSize / 100);
-    // assign pieceIds from allowed for process and returned pids and reserve this pids
-    const result :IPieceId[] = [];
-    if (ordering === 'direct') {
-      for (const pid of allowedForProcess) {
-        if (result.length >= requiredPieces) {
-          break;
-        }
-        result.push(pid);
-      }
+    if (this._batchSize.isPercent) {
+      return []; // not ready
     }
-    if (result.length < requiredPieces) {
-      const first = pids[0];
-      let last = pids[0];
-      for (const pid of pids) {
-        if (result.length >= requiredPieces) {
-          break;
-        }
-        last = pid;
-        result.push(pid);
-      }
-      if (ordering === 'direct') {
-        this._model.lastCursor = last;
-      } else {
-        const endRange = [ this._model.lastCursor, first ];
-        const startRange = [ last, this._model.firstCursor ];
-      }
+    const batch = this._batchGetter.getBatch(this._batchSize.size);
+    if (batch.length < this._batchSize.size) {
+      await this.sync();
+      const addForBatch = this._batchGetter.getBatch(this._batchSize.size);
+      batch.concat(addForBatch);
     }
-    return [];
+    const pieces = await this._heap.find({
+      where: {
+        pid: In(batch),
+      },
+    });
+    return pieces.map(({ data }) => data as IPiece);
   }
 
-  resolveBatch(pid :IPieceId[]) {
+  releaseBatch(pid :IPieceId[]) {
+    this._batchGetter.release(pid);
+  }
+
+  failBatch(pid :IPieceId[]) {
+    this._batchGetter.recycle(pid);
   }
 }

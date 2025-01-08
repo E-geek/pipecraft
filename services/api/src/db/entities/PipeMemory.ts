@@ -1,4 +1,12 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  BaseEntity,
+  Column,
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn
+} from 'typeorm';
 import { IPieceId, Nullable, Opaque } from '@pipecraft/types';
 import { Building } from './Building';
 import { Manufacture } from './Manufacture';
@@ -15,7 +23,7 @@ export type IReturnedPieces = IReturnedPiece[];
 @Entity({
   comment: 'Config for storing which pieces in the process and which pieces is done'
 })
-export class PipeMemory {
+export class PipeMemory extends BaseEntity {
   @PrimaryGeneratedColumn('increment', {
     type: 'bigint',
     comment: 'id and default ordering key'
@@ -114,5 +122,13 @@ export class PipeMemory {
       ]);
     }
     return out;
+  }
+
+  set returned(value :IReturnedPieces) {
+    this.returnedRaw = [];
+    for (const [ pid, attempts ] of value) {
+      this.returnedRaw.push(pid);
+      this.returnedRaw.push(BigInt(attempts));
+    }
   }
 }

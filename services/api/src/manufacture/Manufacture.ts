@@ -1,8 +1,8 @@
 import { IBuildingRunResult, IPiece, Nullable } from '@pipecraft/types';
-import { IBuilding } from '@/manufacture/Building';
-import { IPipe } from '@/manufacture/Pipe';
 import { Manufacture as ManufactureModel } from '@/db/entities/Manufacture';
 import { Building as BuildingModel } from '@/db/entities/Building';
+import { IBuilding } from '@/manufacture/Building';
+import { IPipe } from '@/manufacture/Pipe';
 
 export interface IManufacture {
   buildings :IBuilding[];
@@ -11,7 +11,7 @@ export interface IManufacture {
   setModel(model :ManufactureModel) :void;
   registerBuilding(building :IBuilding) :void;
   registerPipe(pipe :IPipe) :void;
-  make() :void;
+  make() :Promise<void>;
 }
 
 export type IManufactureOnReceive = (from :BuildingModel, pieces :IPiece[]) =>Promise<any>;
@@ -53,7 +53,7 @@ export class Manufacture implements IManufacture {
    * - and -
    * setup model of manufacture BUT NOT SAVE IT
    */
-  make() {
+  async make() {
     this._loop.length = 0;
     this._loop.push(...this.buildings.filter(building => building.isMiner));
     for (const pipe of this._pipes) {
@@ -63,11 +63,14 @@ export class Manufacture implements IManufacture {
       return;
     }
     this._model.pipes = [];
+    const awaiterMakePipe :Promise<void>[] = [];
     for (const pipe of this._pipes) {
       const model = pipe.getModel();
+      awaiterMakePipe.push(pipe.make());
       model.manufacture = Promise.resolve(this._model);
       this._model.pipes.push(model);
     }
+    await Promise.all(awaiterMakePipe);
     this._model.buildings = [];
     for (const building of this._buildings) {
       const model = building.getModel();
