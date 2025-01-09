@@ -146,7 +146,7 @@ export class ManufactureService {
     if (!model) {
       model = new ManufactureModel();
       manufacture.setModel(model);
-      manufacture.make();
+      await manufacture.make();
     }
     model.title = title ?? model.title;
     await this._repoManufactures.save(model);
