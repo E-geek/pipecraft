@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { BaseEntity, Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { IPiece, IPieceId } from '@pipecraft/types';
 import { Building } from './Building';
 
@@ -9,7 +9,7 @@ import { Building } from './Building';
   }
 })
 @Index([ 'pid', 'from' ], { unique: true })
-export class Piece {
+export class Piece extends BaseEntity {
   @PrimaryGeneratedColumn('increment', {
     type: 'bigint',
     comment: 'id and default ordering key'
@@ -18,13 +18,10 @@ export class Piece {
 
   @ManyToOne(() => Building, {
     nullable: false,
-    lazy: true,
     cascade: true,
-    onDelete: 'CASCADE',
-    onUpdate: 'NO ACTION',
   })
-  from :Promise<Building>;
-  
+  from :Building;
+
   @CreateDateColumn()
   createdAt :Date;
 
@@ -36,8 +33,9 @@ export class Piece {
   data :IPiece;
 
   constructor(from ?:Building, data ?:IPiece) {
+    super();
     if (from != null) {
-      this.from = Promise.resolve(from);
+      this.from = from;
     }
     if (data != null) {
       this.data = data;

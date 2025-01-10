@@ -42,7 +42,7 @@ export class ManufactureService {
     const awaiter :Promise<unknown>[] = [];
     for (const piece of pieces) {
       const pieceModel = new PieceModel(from, piece);
-      awaiter.push(this._repoPieces.save(pieceModel));
+      awaiter.push(pieceModel.save());
     }
     return Promise.allSettled(awaiter);
   };

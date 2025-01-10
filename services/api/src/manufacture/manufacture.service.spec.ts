@@ -154,7 +154,7 @@ describe('ManufactureService', () => {
     service.registerBuildingType('printerTest', printerDescriptor);
     const manufacture = await service.buildManufacture(1n) as Manufacture;
     expect(manufacture).toBeInstanceOf(Manufacture);
-    await manufacture.tick();
+    await manufacture.mining();
     expect(processed).toBe(0x1);
     await manufacture.tick();
     expect(processed).toBe(0x3);

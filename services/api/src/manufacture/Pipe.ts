@@ -49,6 +49,7 @@ export class Pipe implements IPipe {
   public readonly maxAttempts = 5 as IAttempts;
   public readonly maxHistoryDepth = 1000 * 60 * 60 * 24 * 30 * 3; // 3 months
 
+  // noinspection JSMismatchedCollectionQueryUpdate
   private _heapSet :Set<IPieceId>;
   private _recycleMap :Map<IPieceId, IAttempts>;
   private _holdSet :Set<IPieceId>;
@@ -170,7 +171,7 @@ export class Pipe implements IPipe {
       where: {
         from: {
           bid: from,
-        },
+        } as any,
         createdAt: MoreThan(new Date(Date.now() - this.maxHistoryDepth)),
       },
       order: {
@@ -186,6 +187,10 @@ export class Pipe implements IPipe {
   public async getBatch() :Promise<IPiece[]> {
     if (this._batchSize.isPercent) {
       return []; // not ready
+    }
+    await this.make();
+    if (!this._batchGetter) {
+      return [];
     }
     const batch = this._batchGetter.getBatch(this._batchSize.size);
     if (batch.length < this._batchSize.size) {
