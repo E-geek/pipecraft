@@ -1,5 +1,5 @@
 import { BaseEntity, Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { IPiece, IPieceId } from '@pipecraft/types';
+import { IPieceId, IPieceMeta } from '@pipecraft/types';
 import { Building } from './Building';
 
 @Entity({
@@ -30,9 +30,9 @@ export class Piece extends BaseEntity {
     nullable: false,
 
   })
-  data :IPiece;
+  data :IPieceMeta;
 
-  constructor(from ?:Building, data ?:IPiece) {
+  constructor(from ?:Building, data ?:IPieceMeta) {
     super();
     if (from != null) {
       this.from = from;

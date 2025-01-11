@@ -5,13 +5,14 @@ import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Repository } from 'typeorm';
 
-import { IBuildingTypeDescriptor, IPiece } from '@pipecraft/types';
+import { IBuildingTypeDescriptor, IPiece, IPieceMeta } from '@pipecraft/types';
 
 import { Building } from '@/db/entities/Building';
 import { PipeMemory } from '@/db/entities/PipeMemory';
 import { Scheduler } from '@/db/entities/Scheduler';
 import { Manufacture as ManufactureModel } from '@/db/entities/Manufacture';
 import { Piece } from '@/db/entities/Piece';
+import { BuildingRunConfig } from '@/db/entities/BuildingRunConfig';
 import { Manufacture } from '@/manufacture/Manufacture';
 import { ManufactureService } from './manufacture.service';
 import { getTestDBConf } from '@/test/db.conf';
@@ -31,12 +32,22 @@ describe('ManufactureService', () => {
     }),
   });
 
+  const rand = (min :number, max :number) => Math.floor(Math.random() * (max - min + 1) + min);
+
   beforeEach(async () => {
     const module :TestingModule = await Test.createTestingModule({
       providers: [ ManufactureService ],
       imports: [
         TypeOrmModule.forRoot(getTestDBConf()),
-        TypeOrmModule.forFeature([ TestPrinter, Building, PipeMemory, Scheduler, ManufactureModel, Piece ]),
+        TypeOrmModule.forFeature([
+          TestPrinter,
+          Building,
+          PipeMemory,
+          Scheduler,
+          ManufactureModel,
+          Piece,
+          BuildingRunConfig,
+        ]),
       ]
     }).compile();
 
@@ -115,10 +126,11 @@ describe('ManufactureService', () => {
   });
 
   it('simple run manufacture', async() => {
-    type IPieceLocal = IPiece & { data :number };
+    type IPieceMetaLocal = IPieceMeta & { data :number };
+    type IPieceLocal = IPiece<IPieceMetaLocal>;
     let processed = 0;
-    const result :IPieceLocal[] = [];
-    const minerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceLocal> = {
+    const result :IPieceMetaLocal[] = [];
+    const minerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
       gear: async (args) => {
         args.push([{ data: 1 }]);
         await wait(0);
@@ -126,10 +138,10 @@ describe('ManufactureService', () => {
         return { okResult: []};
       }
     };
-    const factoryDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceLocal> = {
+    const factoryDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
       gear: async (args ) => {
         const input = args.input;
-        for (const piece of input) {
+        for (const { data :piece } of input) {
           args.push([{ data: piece.data + 1 }]);
         }
         await wait(0);
@@ -137,10 +149,10 @@ describe('ManufactureService', () => {
         return { okResult: []};
       }
     };
-    const printerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceLocal> = {
+    const printerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
       gear: async (args) => {
         const input = args.input;
-        for (const piece of input) {
+        for (const { data :piece } of input) {
           result.push({ data: piece.data + 1 });
           args.push([{ data: piece.data + 1 }]);
         }
@@ -179,11 +191,57 @@ describe('ManufactureService', () => {
     for (let i = 0; i < 10; i++) {
       const file = `${i.toString().padStart(2, '0')}.json`;
       files.push(file);
-      const row = { num: Math.random(), str: Math.random() + 's' };
+      const row = { num: rand(100000, 999999), str: rand(1000, 9999) + 's' };
       records.push(row);
       await fs.writeFile(path.join(appTmpDir, file), JSON.stringify(row));
     }
-    await service.startFromMining(1n, { config: { path: appTmpDir }});
+    // preparing complete, create gears
+    type IPieceMetaLocal = IPieceMeta & IExampleData;
+    type IPieceLocal = IPiece<IPieceMetaLocal>;
+    const minerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
+      gear: async (args) => {
+        const tmpDirPath = (args.runConfig as {path :string}).path;
+        const files = await fs.readdir(tmpDirPath);
+        for (const file of files) {
+          const data = await fs.readFile(path.join(tmpDirPath, file), 'utf-8');
+          const row = JSON.parse(data) as IPieceMetaLocal;
+          args.push([ row ]);
+        }
+        return { okResult: []};
+      }
+    };
+    const factoryDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
+      gear: async (args ) => {
+        const input = args.input;
+        for (const { data :piece } of input) {
+          args.push([{
+            num: piece.num * 2,
+            str: 'p' + piece.str,
+          }]);
+        }
+        await wait(0);
+        return { okResult: input.map(p => p.pid) };
+      }
+    };
+    const printerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
+      gear: async (args) => {
+        const input = args.input;
+        const awaiter :Promise<unknown>[] = [];
+        for (const { data :piece } of input) {
+          awaiter.push(testPrinterRepo.save({
+            number: piece.num,
+            string: piece.str,
+            bid: args.bid,
+          }));
+        }
+        await Promise.allSettled(awaiter);
+        return { okResult: input.map(p => p.pid) };
+      }
+    };
+    service.registerBuildingType('minerTest', minerDescriptor);
+    service.registerBuildingType('factoryTest', factoryDescriptor);
+    service.registerBuildingType('printerTest', printerDescriptor);
+    await service.startFromMining(1n, { runConfig: { path: appTmpDir }});
     const printer = await testPrinterRepo.find({ order: { mid: 'ASC' }});
     expect(printer).toHaveLength(10);
     for (let i = 0; i < 10; i++) {

@@ -1,17 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { IBuildingTypeDescriptor, IPiece, Json, JsonMap, Nullable } from '@pipecraft/types';
+import { IBuildingRunConfigMeta, IBuildingTypeDescriptor, IPieceMeta, Nullable } from '@pipecraft/types';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Building as BuildingModel } from '@/db/entities/Building';
 import { PipeMemory as PipeModel } from '@/db/entities/PipeMemory';
 import { Manufacture as ManufactureModel } from '@/db/entities/Manufacture';
 import { Piece as PieceModel } from '@/db/entities/Piece';
+import { BuildingRunConfig } from '@/db/entities/BuildingRunConfig';
 import { Manufacture } from '@/manufacture/Manufacture';
 import { IPipe, Pipe } from '@/manufacture/Pipe';
 import { Building, IBuilding } from '@/manufacture/Building';
 
-export interface IRunManufactureOptions extends JsonMap {
-  config :Json;
+export interface IRunManufactureOptions {
+  runConfig ?:IBuildingRunConfigMeta;
 }
 
 @Injectable()
@@ -19,6 +20,8 @@ export class ManufactureService {
   private _buildingTypes :Map<string, IBuildingTypeDescriptor> = new Map();
 
   private readonly _repoBuildings :Repository<BuildingModel>;
+
+  private readonly _repoBuildingRunConfigs :Repository<BuildingRunConfig>;
 
   private readonly _repoPipeMemories :Repository<PipeModel>;
 
@@ -31,14 +34,16 @@ export class ManufactureService {
     @InjectRepository(PipeModel) repoPipeMemories :Repository<PipeModel>,
     @InjectRepository(ManufactureModel) repoManufactures :Repository<ManufactureModel>,
     @InjectRepository(PieceModel) repoPieces :Repository<PieceModel>,
+    @InjectRepository(BuildingRunConfig) repoBuildingRunConfigs :Repository<BuildingRunConfig>,
   ) {
     this._repoBuildings = repoBuildings;
     this._repoPipeMemories = repoPipeMemories;
     this._repoManufactures = repoManufactures;
     this._repoPieces = repoPieces;
+    this._repoBuildingRunConfigs = repoBuildingRunConfigs;
   }
 
-  private onReceive = (from :BuildingModel, pieces :IPiece[]) => {
+  private onReceive = (from :BuildingModel, pieces :IPieceMeta[]) => {
     const awaiter :Promise<unknown>[] = [];
     for (const piece of pieces) {
       const pieceModel = new PieceModel(from, piece);
@@ -47,7 +52,57 @@ export class ManufactureService {
     return Promise.allSettled(awaiter);
   };
 
-  public startFromMining(minerId :bigint, options :IRunManufactureOptions) {
+  private async _setupRunConfigOnDemand(building :BuildingModel, runConfig :IBuildingRunConfigMeta) {
+    const lastConfig = building.lastRunConfig?.runConfig ?? {};
+    // deep compare and if different then create new config
+    if (JSON.stringify(lastConfig) === JSON.stringify(runConfig)) {
+      return;
+    }
+    const newConfig = new BuildingRunConfig();
+    newConfig.runConfig = runConfig;
+    newConfig.building = building;
+    await this._repoBuildingRunConfigs.save(newConfig);
+    building.runConfig ??= [];
+    building.runConfig.push(newConfig);
+    await this._repoBuildings.save(building);
+  }
+
+  public async startFromMining(minerId :bigint, options :IRunManufactureOptions) {
+    const miner = await this._repoBuildings.findOne({ where:{ bid: minerId }});
+    if (!miner) {
+      return Error('Miner not found');
+    }
+    if (options.runConfig) {
+      await this._setupRunConfigOnDemand(miner, options.runConfig);
+    }
+    miner.runConfig ??= [];
+    const manufactureModel = await miner.manufacture;
+    let manufacture :Manufacture;
+    if (!manufactureModel) {
+      const manufactureOrError = await this.buildManufacture(minerId);
+      if (manufactureOrError instanceof Error) {
+        return manufactureOrError;
+      }
+      manufacture = manufactureOrError;
+    } else {
+      const manufactureOrError = await this.loadManufacture(manufactureModel);
+      if (manufactureOrError instanceof Error) {
+        return manufactureOrError;
+      }
+      manufacture = manufactureOrError;
+    }
+    await manufacture.mining(options);
+    let i = 0;
+    while (i < 10000) {
+      const result = await manufacture.tick();
+      if (result instanceof Error) {
+        return result;
+      }
+      if (result === null) {
+        break;
+      }
+      i++;
+    }
   }
 
   public async registerBuildingType(type :string, descriptor :IBuildingTypeDescriptor) :Promise<void> {
@@ -151,5 +206,37 @@ export class ManufactureService {
     model.title = title ?? model.title;
     await this._repoManufactures.save(model);
     return model.mid;
+  }
+
+  public async loadManufacture(manufactureModel :ManufactureModel) :Promise<Manufacture | Error> {
+    const manufacture = new Manufacture(this.onReceive, manufactureModel);
+    const buildingModels = manufactureModel.buildings;
+    const pipeModels = manufactureModel.pipes;
+    const buildingMap = new Map<bigint, IBuilding>();
+    for (const buildingModel of buildingModels) {
+      const building = this.makeBuildingByModel(buildingModel);
+      if (building instanceof Error) {
+        return building;
+      }
+      manufacture.registerBuilding(building);
+      buildingMap.set(buildingModel.bid, building);
+    }
+    for (const pipeModel of pipeModels) {
+      const from = buildingMap.get(pipeModel.from.bid);
+      const to = buildingMap.get(pipeModel.to.bid);
+      if (!from || !to) {
+        return Error(`Building for pipe ${pipeModel.pmid} not exists ${pipeModel.from.bid} -> ${pipeModel.to.bid};\
+          Problem with ${from ? '' : 'from'}${!from && !to ? ', ' : ''}${to ? '' : 'to'}`);
+      }
+      const pipe = new Pipe({
+        pipeMemory: pipeModel,
+        from,
+        to,
+        heap: this._repoPieces,
+      });
+      manufacture.registerPipe(pipe);
+    }
+    await manufacture.make();
+    return manufacture;
   }
 }

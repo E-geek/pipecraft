@@ -1,6 +1,6 @@
 import { MixedList } from 'typeorm/common/MixedList';
 import { JsonMap } from './json';
-import { IPiece, IPieceId } from './piece';
+import { IPiece, IPieceId, IPieceMeta } from './piece';
 import { Promisable } from './basic';
 import { IBuildingMemory } from './building-memory';
 import { IBuildingRunConfigMeta } from './building-run-config';
@@ -9,12 +9,12 @@ import { IBuildingMeta } from './building';
 export type IBuildingTypeType = 'miner' | 'factory' | 'printer' | 'logic';
 
 export interface IBuildingTypeMeta extends JsonMap {
-  type :IBuildingTypeType; 
+  type :IBuildingTypeType;
 }
 
-export type IBuildingPushFunction<OutputType = IPiece> = (pieces :OutputType[]) =>Promisable<void>;
+export type IBuildingPushFunction<OutputType = IPieceMeta> = (pieces :OutputType[]) =>Promisable<void>;
 
-export interface IBuildingRunArgs<InputType = IPiece, OutputType = IPiece> {
+export interface IBuildingRunArgs<InputType = IPiece, OutputType = IPieceMeta> {
   // function for push new pieces
   push :IBuildingPushFunction<OutputType>;
   // config for current runner from Building.meta
@@ -25,6 +25,8 @@ export interface IBuildingRunArgs<InputType = IPiece, OutputType = IPiece> {
   typeMeta :IBuildingTypeMeta;
   // inputPieces
   input :InputType[];
+  // building id
+  bid :bigint;
 }
 
 export interface IBuildingRunResult {
@@ -33,9 +35,9 @@ export interface IBuildingRunResult {
   errorLogs ?:string[];
 }
 
-export type IBuildingGear<InputType = IPiece, OutputType = IPiece> = (args :IBuildingRunArgs<InputType, OutputType>) =>Promise<IBuildingRunResult>;
+export type IBuildingGear<InputType = IPiece, OutputType = IPieceMeta> = (args :IBuildingRunArgs<InputType, OutputType>) =>Promise<IBuildingRunResult>;
 
-export interface IBuildingTypeDescriptor<InputType = IPiece, OutputType = IPiece> {
+export interface IBuildingTypeDescriptor<InputType = IPiece, OutputType = IPieceMeta> {
   gear :IBuildingGear<InputType, OutputType>;
   memory ?:{
     entities :IBuildingMemory[];

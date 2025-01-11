@@ -1,3 +1,3 @@
-import { Json } from './json';
+import { JsonMap } from './json';
 
-export type IBuildingRunConfigMeta = Json;
+export interface IBuildingRunConfigMeta extends JsonMap {}

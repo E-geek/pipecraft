@@ -1,4 +1,4 @@
-import { IBuildingRunResult, IPiece, Nullable } from '@pipecraft/types';
+import { IBuildingRunResult, IPieceMeta, Nullable } from '@pipecraft/types';
 import { Manufacture as ManufactureModel } from '@/db/entities/Manufacture';
 import { Building as BuildingModel } from '@/db/entities/Building';
 import { IBuilding } from '@/manufacture/Building';
@@ -12,11 +12,11 @@ export interface IManufacture {
   registerBuilding(building :IBuilding) :void;
   registerPipe(pipe :IPipe) :void;
   make() :Promise<void>;
-  tick() :Promise<IBuildingRunResult | Error>;
+  tick() :Promise<IBuildingRunResult | Error | null>;
   mining() :Promise<IBuildingRunResult>;
 }
 
-export type IManufactureOnReceive = (from :BuildingModel, pieces :IPiece[]) =>Promise<any>;
+export type IManufactureOnReceive = (from :BuildingModel, pieces :IPieceMeta[]) =>Promise<any>;
 
 export class Manufacture implements IManufacture {
   private _pipes :Set<IPipe>;
@@ -104,19 +104,29 @@ export class Manufacture implements IManufacture {
     return result;
   }
 
-  private async pipeTick(pipe :IPipe) {
+  private async pipeTick(pipe :IPipe) :Promise<IBuildingRunResult | null> {
     const to = pipe.to;
     const batch = await pipe.getBatch();
+    if (batch.length === 0) {
+      return null;
+    }
     const awaiterPieces :Promise<void>[] = [];
-    await to.run((pieces) => {
+    const res = await to.run((pieces) => {
       awaiterPieces.push(this._onReceive(to.getModel(), pieces));
     }, batch);
     await Promise.allSettled(awaiterPieces);
-    return { okResult: []};
+    pipe.releaseBatch(res.okResult);
+    return res;
   }
 
-  public async tick() :Promise<IBuildingRunResult | Error> {
+  private _nullCursor = -1;
+
+  public async tick() :Promise<IBuildingRunResult | Error | null> {
     const cursor = this._cursor++;
+    if (this._nullCursor === cursor) {
+      this._nullCursor = -1;
+      return null;
+    }
     if (this._cursor >= this._loop.length) {
       this._cursor = 0;
     }
@@ -125,7 +135,15 @@ export class Manufacture implements IManufacture {
       return new Error('No elements in loop, maybe `make` are skipped?');
     }
     if (element.type === 'pipe') {
-      return this.pipeTick(element);
+      const result = await this.pipeTick(element);
+      if (result === null) {
+        if (this._nullCursor === -1) {
+          this._nullCursor = cursor;
+        }
+        return this.tick();
+      }
+      this._nullCursor = -1;
+      return result;
     }
     return { okResult: []};
   }

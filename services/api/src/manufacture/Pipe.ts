@@ -196,14 +196,15 @@ export class Pipe implements IPipe {
     if (batch.length < this._batchSize.size) {
       await this.sync();
       const addForBatch = this._batchGetter.getBatch(this._batchSize.size);
-      batch.concat(addForBatch);
+      batch.push(...addForBatch);
     }
     const pieces = await this._heap.find({
+      select: [ 'pid', 'data' ],
       where: {
         pid: In(batch),
       },
     });
-    return pieces.map(({ data }) => data as IPiece);
+    return pieces.map(({ pid, data }) => ({ data, pid } as IPiece));
   }
 
   releaseBatch(pid :IPieceId[]) {

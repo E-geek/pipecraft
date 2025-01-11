@@ -13,7 +13,7 @@ export class BuildingRunConfig {
   })
   brcid :bigint;
 
-  @ManyToOne(() => Building, (building) => building.lastRunConfig)
+  @ManyToOne(() => Building, (building) => building.runConfig)
   building :Building;
 
   @OneToMany(() => RunReport, runReport => runReport.buildingRunConfig, {

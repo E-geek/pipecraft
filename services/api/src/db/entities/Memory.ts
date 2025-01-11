@@ -1,4 +1,4 @@
-import { BaseEntity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { BaseEntity, Column, CreateDateColumn, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { IBuildingMemory } from '@pipecraft/types';
 
 export abstract class Memory extends BaseEntity implements IBuildingMemory {
@@ -15,9 +15,9 @@ export abstract class Memory extends BaseEntity implements IBuildingMemory {
   })
   bid :bigint;
 
-  @Column()
+  @CreateDateColumn()
   createdAt :Date;
 
-  @Column()
+  @UpdateDateColumn()
   updatedAt :Date;
 }

@@ -1,4 +1,5 @@
 import {
+  BaseEntity,
   Column,
   CreateDateColumn,
   Entity,
@@ -18,7 +19,7 @@ import { Manufacture } from './Manufacture';
 @Entity({
   comment: 'Data of build: miner, factory, printer, etc...'
 })
-export class Building {
+export class Building extends BaseEntity{
   @PrimaryGeneratedColumn('increment', {
     type: 'bigint',
     comment: 'id of the building'

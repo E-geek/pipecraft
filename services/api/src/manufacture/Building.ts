@@ -37,6 +37,7 @@ export class Building implements IBuilding {
       runConfig: this._model.lastRunConfig.runConfig,
       typeMeta: this._type.meta,
       buildingMeta: this._model.meta,
+      bid: this._model.bid,
     });
   }
 
