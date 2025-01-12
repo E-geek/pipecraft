@@ -2,6 +2,14 @@ import * as process from 'node:process';
 import { registerAs } from '@nestjs/config';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
 
+declare global {
+  interface BigInt {
+    toJSON() :number;
+  }
+}
+
+BigInt.prototype.toJSON = function () { return this.toString(); };
+
 export default registerAs('database', () => {
   return {
     type: 'postgres',

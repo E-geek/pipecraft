@@ -2,14 +2,14 @@ import {
   BaseEntity,
   Column,
   CreateDateColumn,
-  Entity,
+  Entity, Generated,
   ManyToOne,
   OneToMany,
-  OneToOne,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn
+  OneToOne, PrimaryColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { IBuildingMeta, Nullable } from '@pipecraft/types';
+import { valueTransformerBigint } from '../helpers/valueTransformerBigint';
 import { BuildingType } from './BuildingType';
 import { BuildingRunConfig } from './BuildingRunConfig';
 import { Scheduler } from './Scheduler';
@@ -19,10 +19,12 @@ import { Manufacture } from './Manufacture';
 @Entity({
   comment: 'Data of build: miner, factory, printer, etc...'
 })
-export class Building extends BaseEntity{
-  @PrimaryGeneratedColumn('increment', {
+export class Building extends BaseEntity {
+  @Generated('increment')
+  @PrimaryColumn({
     type: 'bigint',
-    comment: 'id of the building'
+    comment: 'id of the building',
+    transformer: valueTransformerBigint,
   })
   bid :bigint;
 
@@ -79,7 +81,7 @@ export class Building extends BaseEntity{
   runConfig :BuildingRunConfig[];
 
   get lastRunConfig() {
-    return this.runConfig[this.runConfig.length - 1];
+    return (this.runConfig ?? [])[this.runConfig.length - 1];
   }
 
   @OneToOne(() => Scheduler, scheduler => scheduler.building, {

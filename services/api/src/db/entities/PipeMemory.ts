@@ -2,12 +2,12 @@ import {
   BaseEntity,
   Column,
   CreateDateColumn,
-  Entity,
-  ManyToOne,
-  PrimaryGeneratedColumn,
+  Entity, Generated,
+  ManyToOne, PrimaryColumn,
   UpdateDateColumn
 } from 'typeorm';
 import { IPieceId, Nullable, Opaque } from '@pipecraft/types';
+import { valueTransformerBigint } from '../helpers/valueTransformerBigint';
 import { Building } from './Building';
 import { Manufacture } from './Manufacture';
 
@@ -24,9 +24,11 @@ export type IReturnedPieces = IReturnedPiece[];
   comment: 'Config for storing which pieces in the process and which pieces is done'
 })
 export class PipeMemory extends BaseEntity {
-  @PrimaryGeneratedColumn('increment', {
+  @Generated('increment')
+  @PrimaryColumn({
     type: 'bigint',
-    comment: 'id and default ordering key'
+    comment: 'id and default ordering key',
+    transformer: valueTransformerBigint,
   })
   pmid :bigint;
 
@@ -52,7 +54,8 @@ export class PipeMemory extends BaseEntity {
     type: 'bigint',
     nullable: false,
     default: -1,
-    comment: 'Minimum piece id which take to a process'
+    comment: 'Minimum piece id which take to a process',
+    transformer: valueTransformerBigint,
   })
   firstCursor :bigint;
 
@@ -60,7 +63,8 @@ export class PipeMemory extends BaseEntity {
     type: 'bigint',
     nullable: false,
     default: -1,
-    comment: 'Maximum piece id which take to a process'
+    comment: 'Maximum piece id which take to a process',
+    transformer: valueTransformerBigint,
   })
   lastCursor :bigint;
 
@@ -117,7 +121,7 @@ export class PipeMemory extends BaseEntity {
     const out :IReturnedPieces = [];
     for (let i = 0; i < this.returnedRaw.length; i += 2) {
       out.push([
-        this.returnedRaw[i] as IPieceId,
+        BigInt(this.returnedRaw[i]) as IPieceId,
         Number(this.returnedRaw[i + 1]) as IAttempts,
       ]);
     }

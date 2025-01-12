@@ -1,5 +1,15 @@
-import { BaseEntity, Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  BaseEntity,
+  Column,
+  CreateDateColumn,
+  Entity,
+  Generated,
+  Index,
+  ManyToOne,
+  PrimaryColumn,
+} from 'typeorm';
 import { IPieceId, IPieceMeta } from '@pipecraft/types';
+import { valueTransformerBigint } from '../helpers/valueTransformerBigint';
 import { Building } from './Building';
 
 @Entity({
@@ -10,15 +20,17 @@ import { Building } from './Building';
 })
 @Index([ 'pid', 'from' ], { unique: true })
 export class Piece extends BaseEntity {
-  @PrimaryGeneratedColumn('increment', {
+  @Generated('increment')
+  @PrimaryColumn({
     type: 'bigint',
-    comment: 'id and default ordering key'
+    comment: 'id and default ordering key',
+    transformer: valueTransformerBigint,
   })
   pid :IPieceId;
 
   @ManyToOne(() => Building, {
     nullable: false,
-    cascade: true,
+    onDelete: 'CASCADE'
   })
   from :Building;
 
@@ -28,7 +40,6 @@ export class Piece extends BaseEntity {
   @Column({
     type: 'jsonb',
     nullable: false,
-
   })
   data :IPieceMeta;
 

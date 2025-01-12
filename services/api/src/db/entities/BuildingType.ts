@@ -1,13 +1,16 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Generated, PrimaryColumn } from 'typeorm';
 import { IBuildingTypeMeta } from '@pipecraft/types';
+import { valueTransformerBigint } from '../helpers/valueTransformerBigint';
 
 @Entity({
   comment: 'Type of building'
 })
 export class BuildingType {
-  @PrimaryGeneratedColumn('increment', {
+  @Generated('increment')
+  @PrimaryColumn({
     type: 'bigint',
-    comment: 'type of the building'
+    comment: 'type of the building',
+    transformer: valueTransformerBigint,
   })
   btid :bigint;
 

@@ -1,6 +1,8 @@
 import { IBuildingRunResult, IPieceMeta, Nullable } from '@pipecraft/types';
+import { Repository } from 'typeorm';
 import { Manufacture as ManufactureModel } from '@/db/entities/Manufacture';
 import { Building as BuildingModel } from '@/db/entities/Building';
+import { Piece } from '@/db/entities/Piece';
 import { IBuilding } from '@/manufacture/Building';
 import { IPipe } from '@/manufacture/Pipe';
 
@@ -16,7 +18,7 @@ export interface IManufacture {
   mining() :Promise<IBuildingRunResult>;
 }
 
-export type IManufactureOnReceive = (from :BuildingModel, pieces :IPieceMeta[]) =>Promise<any>;
+export type IManufactureOnReceive = (from :BuildingModel, pieces :IPieceMeta[]) =>Piece[];
 
 export class Manufacture implements IManufacture {
   private _pipes :Set<IPipe>;
@@ -25,13 +27,15 @@ export class Manufacture implements IManufacture {
   private _model :Nullable<ManufactureModel>;
   private _loop :(IPipe)[];
   private _onReceive :IManufactureOnReceive;
+  private _repoPieces :Repository<Piece>;
 
-  constructor(onReceive :IManufactureOnReceive, model :Nullable<ManufactureModel> = null) {
+  constructor(onReceive :IManufactureOnReceive, repoPieces :Repository<Piece>, model :Nullable<ManufactureModel> = null) {
     this._pipes = new Set();
     this._buildings = new Set();
     this._loop = [];
     this._model = model;
     this._onReceive = onReceive;
+    this._repoPieces = repoPieces;
   }
 
   getModel() {
@@ -88,11 +92,11 @@ export class Manufacture implements IManufacture {
       errorResult: [],
     };
     for (const miner of miners) {
-      const awaiterPieces :Promise<void>[] = [];
+      const piecesToStore :Piece[] = [];
       const out = await miner.run((pieces) => {
-        awaiterPieces.push(this._onReceive(miner.getModel(), pieces));
+        piecesToStore.push(...this._onReceive(miner.getModel(), pieces));
       });
-      await Promise.allSettled(awaiterPieces);
+      await this._repoPieces.save(piecesToStore);
       result.okResult.push(...out.okResult);
       if (out.errorLogs) {
         result.errorLogs.push(...out.errorLogs);
@@ -110,11 +114,11 @@ export class Manufacture implements IManufacture {
     if (batch.length === 0) {
       return null;
     }
-    const awaiterPieces :Promise<void>[] = [];
+    const piecesToStore :Piece[] = [];
     const res = await to.run((pieces) => {
-      awaiterPieces.push(this._onReceive(to.getModel(), pieces));
+      piecesToStore.push(...this._onReceive(to.getModel(), pieces));
     }, batch);
-    await Promise.allSettled(awaiterPieces);
+    await this._repoPieces.save(piecesToStore);
     pipe.releaseBatch(res.okResult);
     return res;
   }

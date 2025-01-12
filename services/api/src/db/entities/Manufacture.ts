@@ -1,22 +1,25 @@
 import {
+  BaseEntity,
   Column,
   CreateDateColumn,
-  Entity,
+  Entity, Generated,
   ManyToOne,
-  OneToMany,
-  PrimaryGeneratedColumn,
+  OneToMany, PrimaryColumn,
   UpdateDateColumn
 } from 'typeorm';
+import { valueTransformerBigint } from '../helpers/valueTransformerBigint';
 import { User } from './User';
 import { PipeMemory } from './PipeMemory';
 import { Building } from './Building';
 import { Scheduler } from './Scheduler';
 
 @Entity()
-export class Manufacture {
-  @PrimaryGeneratedColumn('increment', {
+export class Manufacture extends BaseEntity {
+  @Generated('increment')
+  @PrimaryColumn({
     type: 'bigint',
-    comment: 'id of the manufacture'
+    comment: 'id of the manufacture',
+    transformer: valueTransformerBigint,
   })
   mid :bigint;
 

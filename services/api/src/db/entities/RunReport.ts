@@ -1,4 +1,12 @@
-import { CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  CreateDateColumn,
+  Entity, Generated,
+  JoinColumn,
+  ManyToOne,
+  OneToOne,
+  PrimaryColumn,
+} from 'typeorm';
+import { valueTransformerBigint } from '../helpers/valueTransformerBigint';
 import { BuildingRunConfig } from './BuildingRunConfig';
 import { Piece } from './Piece';
 
@@ -7,9 +15,11 @@ import { Piece } from './Piece';
   comment: 'Every piece has a context of creation. This is important data for debugging and auditing'
 })
 export class RunReport {
-  @PrimaryGeneratedColumn('increment', {
+  @Generated('increment')
+  @PrimaryColumn({
     type: 'bigint',
-    comment: 'id and default ordering key'
+    comment: 'id and default ordering key',
+    transformer: valueTransformerBigint,
   })
   rrid :bigint;
 

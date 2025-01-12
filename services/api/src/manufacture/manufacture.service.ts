@@ -43,13 +43,13 @@ export class ManufactureService {
     this._repoBuildingRunConfigs = repoBuildingRunConfigs;
   }
 
-  private onReceive = (from :BuildingModel, pieces :IPieceMeta[]) => {
-    const awaiter :Promise<unknown>[] = [];
+  private onReceive = (from :BuildingModel, pieces :IPieceMeta[]) :PieceModel[] => {
+    const toStoreList :PieceModel[] = [];
     for (const piece of pieces) {
       const pieceModel = new PieceModel(from, piece);
-      awaiter.push(pieceModel.save());
+      toStoreList.push(pieceModel);
     }
-    return Promise.allSettled(awaiter);
+    return toStoreList;
   };
 
   private async _setupRunConfigOnDemand(building :BuildingModel, runConfig :IBuildingRunConfigMeta) {
@@ -61,10 +61,8 @@ export class ManufactureService {
     const newConfig = new BuildingRunConfig();
     newConfig.runConfig = runConfig;
     newConfig.building = building;
-    await this._repoBuildingRunConfigs.save(newConfig);
-    building.runConfig ??= [];
-    building.runConfig.push(newConfig);
-    await this._repoBuildings.save(building);
+    await this._repoBuildingRunConfigs.save(newConfig, { reload: true });
+    await building.reload();
   }
 
   public async startFromMining(minerId :bigint, options :IRunManufactureOptions) {
@@ -75,7 +73,6 @@ export class ManufactureService {
     if (options.runConfig) {
       await this._setupRunConfigOnDemand(miner, options.runConfig);
     }
-    miner.runConfig ??= [];
     const manufactureModel = await miner.manufacture;
     let manufacture :Manufacture;
     if (!manufactureModel) {
@@ -91,7 +88,7 @@ export class ManufactureService {
       }
       manufacture = manufactureOrError;
     }
-    await manufacture.mining(options);
+    await manufacture.mining();
     let i = 0;
     while (i < 10000) {
       const result = await manufacture.tick();
@@ -136,7 +133,7 @@ export class ManufactureService {
   }
 
   public async buildManufacture(startBuildingId :bigint) :Promise<Manufacture | Error> {
-    const manufacture = new Manufacture(this.onReceive);
+    const manufacture = new Manufacture(this.onReceive, this._repoPieces);
     const startBuildingModel = await this._repoBuildings.findOne({ where: { bid: startBuildingId }});
     const startBuilding = this.makeBuildingByModel(startBuildingModel);
     if (startBuilding instanceof Error) {
@@ -209,7 +206,7 @@ export class ManufactureService {
   }
 
   public async loadManufacture(manufactureModel :ManufactureModel) :Promise<Manufacture | Error> {
-    const manufacture = new Manufacture(this.onReceive, manufactureModel);
+    const manufacture = new Manufacture(this.onReceive, this._repoPieces, manufactureModel);
     const buildingModels = manufactureModel.buildings;
     const pipeModels = manufactureModel.pipes;
     const buildingMap = new Map<bigint, IBuilding>();

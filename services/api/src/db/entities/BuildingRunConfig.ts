@@ -1,5 +1,14 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Generated,
+  ManyToOne,
+  OneToMany,
+  PrimaryColumn,
+} from 'typeorm';
 import { IBuildingRunConfigMeta } from '@pipecraft/types';
+import { valueTransformerBigint } from '../helpers/valueTransformerBigint';
 import { Building } from './Building';
 import { RunReport } from './RunReport';
 
@@ -7,9 +16,11 @@ import { RunReport } from './RunReport';
   comment: 'This table stores the run configuration for a building run'
 })
 export class BuildingRunConfig {
-  @PrimaryGeneratedColumn('increment', {
+  @Generated('increment')
+  @PrimaryColumn({
     type: 'bigint',
-    comment: 'id and default ordering key'
+    comment: 'id and default ordering key',
+    transformer: valueTransformerBigint,
   })
   brcid :bigint;
 

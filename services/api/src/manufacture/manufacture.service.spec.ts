@@ -22,8 +22,10 @@ import { wait } from '@/helpers/async';
 
 describe('ManufactureService', () => {
   let service :ManufactureService;
+  let pieceRepo :Repository<Piece>;
   let testPrinterRepo :Repository<TestPrinter>;
   let manufactureRepo :Repository<ManufactureModel>;
+  let workingDirectory :string | null = null;
 
   const getDummyBuildingType = () :IBuildingTypeDescriptor => ({
     gear: () => Promise.resolve({
@@ -54,11 +56,18 @@ describe('ManufactureService', () => {
     service = module.get<ManufactureService>(ManufactureService);
     testPrinterRepo = module.get<Repository<TestPrinter>>(getRepositoryToken(TestPrinter));
     manufactureRepo = module.get<Repository<ManufactureModel>>(getRepositoryToken(ManufactureModel));
+    pieceRepo = module.get<Repository<Piece>>(getRepositoryToken(Piece));
+    await manufactureRepo.delete({});
+    await testPrinterRepo.delete({});
+    await pieceRepo.delete({});
   });
 
   afterEach(async () => {
     service.clearBuildingTypes();
-    await manufactureRepo.delete({});
+    if (workingDirectory) {
+      await fs.rm(workingDirectory, { recursive: true });
+      workingDirectory = null;
+    }
   });
 
   it('should be defined', () => {
@@ -182,6 +191,7 @@ describe('ManufactureService', () => {
     // 3. Await for finish
     // 4. check for memory of the printer for: column numbers should store num * 2, column strings should store 'p' + str,
     const appTmpDir = await fs.mkdtemp(path.join(tmpdir(), 'test-'));
+    workingDirectory = appTmpDir;
     const files = [];
     interface IExampleData {
       num :number;
@@ -201,7 +211,8 @@ describe('ManufactureService', () => {
     const minerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
       gear: async (args) => {
         const tmpDirPath = (args.runConfig as {path :string}).path;
-        const files = await fs.readdir(tmpDirPath);
+        let files = await fs.readdir(tmpDirPath);
+        files = files.sort();
         for (const file of files) {
           const data = await fs.readFile(path.join(tmpDirPath, file), 'utf-8');
           const row = JSON.parse(data) as IPieceMetaLocal;
@@ -244,6 +255,7 @@ describe('ManufactureService', () => {
     await service.startFromMining(1n, { runConfig: { path: appTmpDir }});
     const printer = await testPrinterRepo.find({ order: { mid: 'ASC' }});
     expect(printer).toHaveLength(10);
+    console.log(records, printer);
     for (let i = 0; i < 10; i++) {
       expect(printer[i].number).toBe(records[i].num * 2);
       expect(printer[i].string).toBe('p' + records[i].str);
