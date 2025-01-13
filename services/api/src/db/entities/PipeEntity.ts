@@ -4,12 +4,12 @@ import {
   CreateDateColumn,
   Entity, Generated,
   ManyToOne, PrimaryColumn,
-  UpdateDateColumn
+  UpdateDateColumn,
 } from 'typeorm';
 import { IPieceId, Nullable, Opaque } from '@pipecraft/types';
 import { valueTransformerBigint } from '../helpers/valueTransformerBigint';
-import { Building } from './Building';
-import { Manufacture } from './Manufacture';
+import { BuildingEntity } from './BuildingEntity';
+import { ManufactureEntity } from './ManufactureEntity';
 
 export type IAttempts = Opaque<number, 'attempts'>;
 export type IReturnedPiece = [IPieceId, IAttempts];
@@ -21,9 +21,10 @@ export type IReturnedPieces = IReturnedPiece[];
  * for a select batch of pieces from cursor and to N|X% pieces
  */
 @Entity({
-  comment: 'Config for storing which pieces in the process and which pieces is done'
+  comment: 'Config for storing which pieces in the process and which pieces is done',
+  name: 'pipe',
 })
-export class PipeMemory extends BaseEntity {
+export class PipeEntity extends BaseEntity {
   @Generated('increment')
   @PrimaryColumn({
     type: 'bigint',
@@ -32,23 +33,23 @@ export class PipeMemory extends BaseEntity {
   })
   pmid :bigint;
 
-  @ManyToOne(() => Building, {
+  @ManyToOne(() => BuildingEntity, {
     nullable: false,
     eager: true,
     cascade: true,
     onDelete: 'CASCADE',
     onUpdate: 'NO ACTION',
   })
-  from :Building;
+  from :BuildingEntity;
 
-  @ManyToOne(() => Building, {
+  @ManyToOne(() => BuildingEntity, {
     nullable: false,
     eager: true,
     cascade: true,
     onDelete: 'CASCADE',
     onUpdate: 'NO ACTION',
   })
-  to :Building;
+  to :BuildingEntity;
 
   @Column({
     type: 'bigint',
@@ -84,13 +85,13 @@ export class PipeMemory extends BaseEntity {
   })
   priority :number;
 
-  @ManyToOne(() => Manufacture, {
+  @ManyToOne(() => ManufactureEntity, {
     nullable: true,
     lazy: true,
     cascade: false,
     onDelete: 'SET NULL',
   })
-  manufacture :Promise<Nullable<Manufacture>>;
+  manufacture :Promise<Nullable<ManufactureEntity>>;
 
   @CreateDateColumn()
   createdAt :Date;
@@ -103,7 +104,7 @@ export class PipeMemory extends BaseEntity {
     type: 'bigint',
     nullable: false,
     default: [],
-    comment: 'Pieces hold for processing now'
+    comment: 'Pieces hold for processing now',
   })
   reserved :IPieceId[];
 
@@ -113,7 +114,7 @@ export class PipeMemory extends BaseEntity {
     nullable: false,
     default: [],
     comment: 'Pieces when process failed, crashed, or return the error pieces, ' +
-      'format is [pieceId, attempts, pieceId, attempts, ...]'
+      'format is [pieceId, attempts, pieceId, attempts, ...]',
   })
   returnedRaw :bigint[];
 

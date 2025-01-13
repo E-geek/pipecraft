@@ -1,15 +1,16 @@
 import { randomBytes } from 'crypto';
 import {
+  BaseEntity,
   BeforeInsert,
   Column,
   CreateDateColumn,
   Entity,
   ManyToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn
+  UpdateDateColumn,
 } from 'typeorm';
 import jwt, { TokenExpiredError } from 'jsonwebtoken';
-import { User } from './User';
+import { UserEntity } from './UserEntity';
 
 export type IPeerTokenStatus = 'ok' | 'expired' | 'invalid';
 
@@ -30,10 +31,11 @@ const generateSecretUntilSuccessOrSafeMethod = (length :number, encoding :Buffer
 
 @Entity({
   comment: 'Peer for every user login',
+  name: 'peer',
 })
-export class Peer {
+export class PeerEntity extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', {
-    comment: 'peer id'
+    comment: 'peer id',
   })
   peerId :string;
 
@@ -41,7 +43,7 @@ export class Peer {
     type: 'varchar',
     length: 32,
     nullable: false,
-    comment: 'peer secret'
+    comment: 'peer secret',
   })
   peerSecret :string;
 
@@ -49,7 +51,7 @@ export class Peer {
     type: 'varchar',
     length: 128,
     nullable: false,
-    comment: 'data for validation final check'
+    comment: 'data for validation final check',
   })
   controlData :string;
 
@@ -58,12 +60,12 @@ export class Peer {
     length: 128,
     nullable: true,
     default: null,
-    comment: 'least user agent'
+    comment: 'least user agent',
   })
   userAgent :string | null;
 
-  @ManyToOne(() => User, (user) => user.peers)
-  user :User;
+  @ManyToOne(() => UserEntity, (user) => user.peers)
+  user :UserEntity;
 
   @CreateDateColumn()
   createdAt :Date;

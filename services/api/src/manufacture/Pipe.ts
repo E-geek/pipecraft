@@ -1,8 +1,8 @@
 import { IPiece, IPieceId } from '@pipecraft/types';
 import { FindManyOptions, FindOperator, In, LessThan, MoreThan, Or, Repository } from 'typeorm';
 import { FindOptionsWhere } from 'typeorm/find-options/FindOptionsWhere';
-import { IAttempts, PipeMemory } from '@/db/entities/PipeMemory';
-import { Piece } from '@/db/entities/Piece';
+import { IAttempts, PipeEntity } from '@/db/entities/PipeEntity';
+import { PieceEntity } from '@/db/entities/PieceEntity';
 import { IBuilding } from '@/manufacture/Building';
 import { IManufactureElement } from '@/manufacture/IManufactureElement';
 import { IBatchGetter } from '@/helpers/BatchGetter';
@@ -19,7 +19,7 @@ export interface IPipe extends IManufactureElement {
   make() :Promise<void>;
   sync() :Promise<void>;
 
-  getModel() :PipeMemory;
+  getModel() :PipeEntity;
 
   getBatch() :Promise<IPiece[]>;
 
@@ -29,17 +29,17 @@ export interface IPipe extends IManufactureElement {
 }
 
 export interface IPipeParams {
-  pipeMemory :PipeMemory;
+  pipeMemory :PipeEntity;
   from :IBuilding;
   to :IBuilding;
-  heap :Repository<Piece>;
+  heap :Repository<PieceEntity>;
 }
 
 export class Pipe implements IPipe {
-  private readonly _model :PipeMemory;
+  private readonly _model :PipeEntity;
   private readonly _from :IBuilding;
   private readonly _to :IBuilding;
-  private readonly _heap :Repository<Piece>;
+  private readonly _heap :Repository<PieceEntity>;
   private readonly _batchSize :{
     size :number;
     isPercent :boolean;
@@ -86,7 +86,7 @@ export class Pipe implements IPipe {
     return this._to;
   }
 
-  getModel() :PipeMemory {
+  getModel() :PipeEntity {
     return this._model;
   }
 
@@ -156,7 +156,7 @@ export class Pipe implements IPipe {
     }
   }
 
-  private _getWhereOptions() :FindManyOptions<Piece> {
+  private _getWhereOptions() :FindManyOptions<PieceEntity> {
     const from = this._from.id;
     const { ordering, firstCursor, lastCursor } = this._model;
     const pidCondition :FindOperator<any>[] = [];
@@ -166,7 +166,7 @@ export class Pipe implements IPipe {
     if (lastCursor >= 0) {
       pidCondition.push(MoreThan(lastCursor));
     }
-    const options :FindManyOptions<Piece> = {
+    const options :FindManyOptions<PieceEntity> = {
       select: [ 'pid' ],
       where: {
         from: {
@@ -176,10 +176,10 @@ export class Pipe implements IPipe {
       },
       order: {
         pid: ordering === 'reverse' ? 'DESC' : 'ASC',
-      }
+      },
     };
     if (pidCondition.length) {
-      (options.where as FindOptionsWhere<Piece>).pid = pidCondition.length === 2 ? Or(...pidCondition) : pidCondition[0];
+      (options.where as FindOptionsWhere<PieceEntity>).pid = pidCondition.length === 2 ? Or(...pidCondition) : pidCondition[0];
     }
     return options;
   }

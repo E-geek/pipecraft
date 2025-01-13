@@ -1,16 +1,16 @@
 import { IBuildingRunResult, IPieceMeta, Nullable } from '@pipecraft/types';
 import { Repository } from 'typeorm';
-import { Manufacture as ManufactureModel } from '@/db/entities/Manufacture';
-import { Building as BuildingModel } from '@/db/entities/Building';
-import { Piece } from '@/db/entities/Piece';
+import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
+import { BuildingEntity } from '@/db/entities/BuildingEntity';
+import { PieceEntity } from '@/db/entities/PieceEntity';
 import { IBuilding } from '@/manufacture/Building';
 import { IPipe } from '@/manufacture/Pipe';
 
 export interface IManufacture {
   buildings :IBuilding[];
   pipes :IPipe[];
-  getModel() :Nullable<ManufactureModel>;
-  setModel(model :ManufactureModel) :void;
+  getModel() :Nullable<ManufactureEntity>;
+  setModel(model :ManufactureEntity) :void;
   registerBuilding(building :IBuilding) :void;
   registerPipe(pipe :IPipe) :void;
   make() :Promise<void>;
@@ -18,18 +18,18 @@ export interface IManufacture {
   mining() :Promise<IBuildingRunResult>;
 }
 
-export type IManufactureOnReceive = (from :BuildingModel, pieces :IPieceMeta[]) =>Piece[];
+export type IManufactureOnReceive = (from :BuildingEntity, pieces :IPieceMeta[]) =>PieceEntity[];
 
 export class Manufacture implements IManufacture {
   private _pipes :Set<IPipe>;
   private _buildings :Set<IBuilding>;
   private _cursor = 0;
-  private _model :Nullable<ManufactureModel>;
+  private _model :Nullable<ManufactureEntity>;
   private _loop :(IPipe)[];
   private _onReceive :IManufactureOnReceive;
-  private _repoPieces :Repository<Piece>;
+  private _repoPieces :Repository<PieceEntity>;
 
-  constructor(onReceive :IManufactureOnReceive, repoPieces :Repository<Piece>, model :Nullable<ManufactureModel> = null) {
+  constructor(onReceive :IManufactureOnReceive, repoPieces :Repository<PieceEntity>, model :Nullable<ManufactureEntity> = null) {
     this._pipes = new Set();
     this._buildings = new Set();
     this._loop = [];
@@ -42,7 +42,7 @@ export class Manufacture implements IManufacture {
     return this._model;
   }
 
-  setModel(model :ManufactureModel) {
+  setModel(model :ManufactureEntity) {
     this._model = model;
   }
 
@@ -92,7 +92,7 @@ export class Manufacture implements IManufacture {
       errorResult: [],
     };
     for (const miner of miners) {
-      const piecesToStore :Piece[] = [];
+      const piecesToStore :PieceEntity[] = [];
       const out = await miner.run((pieces) => {
         piecesToStore.push(...this._onReceive(miner.getModel(), pieces));
       });
@@ -114,7 +114,7 @@ export class Manufacture implements IManufacture {
     if (batch.length === 0) {
       return null;
     }
-    const piecesToStore :Piece[] = [];
+    const piecesToStore :PieceEntity[] = [];
     const res = await to.run((pieces) => {
       piecesToStore.push(...this._onReceive(to.getModel(), pieces));
     }, batch);

@@ -1,4 +1,5 @@
 import {
+  BaseEntity,
   Column,
   CreateDateColumn,
   Entity,
@@ -6,22 +7,23 @@ import {
   JoinColumn, ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
-  UpdateDateColumn
+  UpdateDateColumn,
 } from 'typeorm';
 import { Nullable } from '@pipecraft/types';
-import { Building } from './Building';
-import { Manufacture } from './Manufacture';
+import { BuildingEntity } from './BuildingEntity';
+import { ManufactureEntity } from './ManufactureEntity';
 
 @Entity({
   comment: 'Store all schedulers',
+  name: 'scheduler',
 })
 @Index([ 'isActive' ], {
   unique: false,
   where: '"isActive" = true',
 })
-export class Scheduler {
+export class SchedulerEntity extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', {
-    comment: 'user id'
+    comment: 'user id',
   })
   sid :string;
 
@@ -33,13 +35,13 @@ export class Scheduler {
   })
   isActive :boolean;
 
-  @OneToOne(() => Building, (building :Building) => building.scheduler, {
+  @OneToOne(() => BuildingEntity, (building :BuildingEntity) => building.scheduler, {
     nullable: false,
     cascade: true,
     eager: true,
   })
   @JoinColumn()
-  building :Building;
+  building :BuildingEntity;
 
   // for building we can use https://crontab.guru/
   @Column({
@@ -50,13 +52,13 @@ export class Scheduler {
   })
   cron :string;
 
-  @ManyToOne(() => Manufacture, (manufacture :Manufacture) => manufacture.schedulers, {
+  @ManyToOne(() => ManufactureEntity, (manufacture :ManufactureEntity) => manufacture.schedulers, {
     nullable: true,
     lazy: true,
     cascade: false,
     onDelete: 'SET NULL',
   })
-  manufacture :Promise<Nullable<Manufacture>>;
+  manufacture :Promise<Nullable<ManufactureEntity>>;
 
   @CreateDateColumn()
   createdAt :Date;

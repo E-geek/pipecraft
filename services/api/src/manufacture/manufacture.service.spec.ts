@@ -7,12 +7,12 @@ import { Repository } from 'typeorm';
 
 import { IBuildingTypeDescriptor, IPiece, IPieceMeta } from '@pipecraft/types';
 
-import { Building } from '@/db/entities/Building';
-import { PipeMemory } from '@/db/entities/PipeMemory';
-import { Scheduler } from '@/db/entities/Scheduler';
-import { Manufacture as ManufactureModel } from '@/db/entities/Manufacture';
-import { Piece } from '@/db/entities/Piece';
-import { BuildingRunConfig } from '@/db/entities/BuildingRunConfig';
+import { BuildingEntity } from '@/db/entities/BuildingEntity';
+import { PipeEntity } from '@/db/entities/PipeEntity';
+import { SchedulerEntity } from '@/db/entities/SchedulerEntity';
+import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
+import { PieceEntity } from '@/db/entities/PieceEntity';
+import { BuildingRunConfigEntity } from '@/db/entities/BuildingRunConfigEntity';
 import { Manufacture } from '@/manufacture/Manufacture';
 import { ManufactureService } from './manufacture.service';
 import { getTestDBConf } from '@/test/db.conf';
@@ -22,9 +22,9 @@ import { wait } from '@/helpers/async';
 
 describe('ManufactureService', () => {
   let service :ManufactureService;
-  let pieceRepo :Repository<Piece>;
+  let pieceRepo :Repository<PieceEntity>;
   let testPrinterRepo :Repository<TestPrinter>;
-  let manufactureRepo :Repository<ManufactureModel>;
+  let manufactureRepo :Repository<ManufactureEntity>;
   let workingDirectory :string | null = null;
 
   const getDummyBuildingType = () :IBuildingTypeDescriptor => ({
@@ -43,20 +43,20 @@ describe('ManufactureService', () => {
         TypeOrmModule.forRoot(getTestDBConf()),
         TypeOrmModule.forFeature([
           TestPrinter,
-          Building,
-          PipeMemory,
-          Scheduler,
-          ManufactureModel,
-          Piece,
-          BuildingRunConfig,
+          BuildingEntity,
+          PipeEntity,
+          SchedulerEntity,
+          ManufactureEntity,
+          PieceEntity,
+          BuildingRunConfigEntity,
         ]),
-      ]
+      ],
     }).compile();
 
     service = module.get<ManufactureService>(ManufactureService);
     testPrinterRepo = module.get<Repository<TestPrinter>>(getRepositoryToken(TestPrinter));
-    manufactureRepo = module.get<Repository<ManufactureModel>>(getRepositoryToken(ManufactureModel));
-    pieceRepo = module.get<Repository<Piece>>(getRepositoryToken(Piece));
+    manufactureRepo = module.get<Repository<ManufactureEntity>>(getRepositoryToken(ManufactureEntity));
+    pieceRepo = module.get<Repository<PieceEntity>>(getRepositoryToken(PieceEntity));
     await manufactureRepo.delete({});
     await testPrinterRepo.delete({});
     await pieceRepo.delete({});
@@ -145,7 +145,7 @@ describe('ManufactureService', () => {
         await wait(0);
         processed |= 0x1;
         return { okResult: []};
-      }
+      },
     };
     const factoryDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
       gear: async (args ) => {
@@ -156,7 +156,7 @@ describe('ManufactureService', () => {
         await wait(0);
         processed |= 0x2;
         return { okResult: []};
-      }
+      },
     };
     const printerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
       gear: async (args) => {
@@ -168,7 +168,7 @@ describe('ManufactureService', () => {
         await wait(0);
         processed |= 0x4;
         return { okResult: []};
-      }
+      },
     };
     service.registerBuildingType('minerTest', minerDescriptor);
     service.registerBuildingType('factoryTest', factoryDescriptor);
@@ -219,7 +219,7 @@ describe('ManufactureService', () => {
           args.push([ row ]);
         }
         return { okResult: []};
-      }
+      },
     };
     const factoryDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
       gear: async (args ) => {
@@ -232,7 +232,7 @@ describe('ManufactureService', () => {
         }
         await wait(0);
         return { okResult: input.map(p => p.pid) };
-      }
+      },
     };
     const printerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
       gear: async (args) => {
@@ -247,7 +247,7 @@ describe('ManufactureService', () => {
         }
         await Promise.allSettled(awaiter);
         return { okResult: input.map(p => p.pid) };
-      }
+      },
     };
     service.registerBuildingType('minerTest', minerDescriptor);
     service.registerBuildingType('factoryTest', factoryDescriptor);

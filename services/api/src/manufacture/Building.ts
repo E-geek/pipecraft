@@ -1,29 +1,29 @@
 import { IBuildingGear, IBuildingPushFunction, IBuildingRunResult, IPiece } from '@pipecraft/types';
-import { Building as BuildingModel } from '@/db/entities/Building';
-import { BuildingType } from '@/db/entities/BuildingType';
-import { BuildingRunConfig } from '@/db/entities/BuildingRunConfig';
+import { BuildingTypeEntity } from '@/db/entities/BuildingTypeEntity';
+import { BuildingRunConfigEntity } from '@/db/entities/BuildingRunConfigEntity';
+import { BuildingEntity } from '@/db/entities/BuildingEntity';
 import { IManufactureElement } from '@/manufacture/IManufactureElement';
 
 export interface IBuilding extends IManufactureElement {
   type :'building';
   readonly id :bigint;
-  readonly config :BuildingRunConfig;
+  readonly config :BuildingRunConfigEntity;
   readonly batchSize :string;
   readonly typeTitle :string;
   readonly isMiner :boolean;
-  getModel() :BuildingModel;
+  getModel() :BuildingEntity;
   run(push :IBuildingPushFunction, input ?:IPiece[]) :Promise<IBuildingRunResult>;
 }
 
 export class Building implements IBuilding {
-  private readonly _model :BuildingModel;
-  private readonly _type :BuildingType;
+  private readonly _model :BuildingEntity;
+  private readonly _type :BuildingTypeEntity;
   private readonly _gear :IBuildingGear;
-  public readonly config :BuildingRunConfig;
+  public readonly config :BuildingRunConfigEntity;
 
   public type :IBuilding['type'] = 'building';
 
-  constructor(building :BuildingModel, gear :IBuildingGear) {
+  constructor(building :BuildingEntity, gear :IBuildingGear) {
     this._model = building;
     this._type = building.type;
     this._gear = gear;
@@ -41,7 +41,7 @@ export class Building implements IBuilding {
     });
   }
 
-  getModel() :BuildingModel {
+  getModel() :BuildingEntity {
     return this._model;
   }
 

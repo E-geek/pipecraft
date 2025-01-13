@@ -4,7 +4,7 @@ import {
   CreateDateColumn,
   Generated,
   PrimaryColumn,
-  UpdateDateColumn
+  UpdateDateColumn,
 } from 'typeorm';
 import { IBuildingMemory } from '@pipecraft/types';
 import { valueTransformerBigint } from '../helpers/valueTransformerBigint';

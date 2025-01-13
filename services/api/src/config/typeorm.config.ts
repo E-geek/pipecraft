@@ -3,7 +3,7 @@ import { config } from 'dotenv';
 import dbConfig from './db.config';
 import { dotEnvPath } from './config';
 config({
-  path: dotEnvPath
+  path: dotEnvPath,
 });
 
 export default new DataSource({

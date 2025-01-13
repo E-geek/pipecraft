@@ -10,16 +10,17 @@ import {
 } from 'typeorm';
 import { IPieceId, IPieceMeta } from '@pipecraft/types';
 import { valueTransformerBigint } from '../helpers/valueTransformerBigint';
-import { Building } from './Building';
+import { BuildingEntity } from './BuildingEntity';
 
 @Entity({
   comment: 'Elementary data portion for processing',
   orderBy: {
     pid: 'ASC',
-  }
+  },
+  name: 'piece',
 })
 @Index([ 'pid', 'from' ], { unique: true })
-export class Piece extends BaseEntity {
+export class PieceEntity extends BaseEntity {
   @Generated('increment')
   @PrimaryColumn({
     type: 'bigint',
@@ -28,11 +29,11 @@ export class Piece extends BaseEntity {
   })
   pid :IPieceId;
 
-  @ManyToOne(() => Building, {
+  @ManyToOne(() => BuildingEntity, {
     nullable: false,
-    onDelete: 'CASCADE'
+    onDelete: 'CASCADE',
   })
-  from :Building;
+  from :BuildingEntity;
 
   @CreateDateColumn()
   createdAt :Date;
@@ -43,7 +44,7 @@ export class Piece extends BaseEntity {
   })
   data :IPieceMeta;
 
-  constructor(from ?:Building, data ?:IPieceMeta) {
+  constructor(from ?:BuildingEntity, data ?:IPieceMeta) {
     super();
     if (from != null) {
       this.from = from;

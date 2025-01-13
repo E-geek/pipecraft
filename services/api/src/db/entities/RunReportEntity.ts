@@ -1,4 +1,5 @@
 import {
+  BaseEntity,
   CreateDateColumn,
   Entity, Generated,
   JoinColumn,
@@ -7,14 +8,15 @@ import {
   PrimaryColumn,
 } from 'typeorm';
 import { valueTransformerBigint } from '../helpers/valueTransformerBigint';
-import { BuildingRunConfig } from './BuildingRunConfig';
-import { Piece } from './Piece';
+import { BuildingRunConfigEntity } from './BuildingRunConfigEntity';
+import { PieceEntity } from './PieceEntity';
 
 // Yes, this is additional columns for a Piece, but it can be clear by other ruleset
 @Entity({
-  comment: 'Every piece has a context of creation. This is important data for debugging and auditing'
+  comment: 'Every piece has a context of creation. This is important data for debugging and auditing',
+  name: 'run_report',
 })
-export class RunReport {
+export class RunReportEntity extends BaseEntity {
   @Generated('increment')
   @PrimaryColumn({
     type: 'bigint',
@@ -23,15 +25,15 @@ export class RunReport {
   })
   rrid :bigint;
 
-  @ManyToOne(() => BuildingRunConfig, (buildingRunConfig) => buildingRunConfig.runReport)
-  buildingRunConfig :BuildingRunConfig;
+  @ManyToOne(() => BuildingRunConfigEntity, (buildingRunConfig) => buildingRunConfig.runReport)
+  buildingRunConfig :BuildingRunConfigEntity;
 
-  @OneToOne(() => Piece, {
+  @OneToOne(() => PieceEntity, {
     cascade: true,
     eager: true,
   })
   @JoinColumn()
-  piece :Piece;
+  piece :PieceEntity;
 
   @CreateDateColumn()
   createdAt :Date;

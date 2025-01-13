@@ -1,17 +1,26 @@
 import * as crypto from 'crypto';
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  BaseEntity,
+  Column,
+  CreateDateColumn,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { IUserMeta } from '@pipecraft/types';
-import { Peer } from './Peer';
-import { Manufacture } from './Manufacture';
+import { PeerEntity } from './PeerEntity';
+import { ManufactureEntity } from './ManufactureEntity';
 
 let globalSalt = 'NOT_SET_YEST';
 
 @Entity({
   comment: 'User with permissions and roles',
+  name: 'user',
 })
-export class User {
+export class UserEntity extends BaseEntity {
   @PrimaryGeneratedColumn('uuid', {
-    comment: 'user id'
+    comment: 'user id',
   })
   uid :string;
 
@@ -47,8 +56,8 @@ export class User {
   })
   isVerified :boolean;
 
-  @OneToMany(() => Peer, (peer) => peer.user)
-  peers :Peer[];
+  @OneToMany(() => PeerEntity, (peer) => peer.user)
+  peers :PeerEntity[];
 
   @Column({
     type: 'jsonb',
@@ -58,8 +67,8 @@ export class User {
   })
   meta :IUserMeta;
 
-  @OneToMany(() => Manufacture, manufacture => manufacture.owner)
-  manufactures :Manufacture[];
+  @OneToMany(() => ManufactureEntity, manufacture => manufacture.owner)
+  manufactures :ManufactureEntity[];
 
   @CreateDateColumn()
   createdAt :Date;
@@ -76,13 +85,13 @@ export class User {
   static getPasswordHash(password :string, salt :string = globalSalt) :Buffer {
     return crypto
       .createHash('sha256', {
-        autoDestroy: true
+        autoDestroy: true,
       })
       .update(password + salt)
       .digest();
   }
 
   isCorrectPassword(password :string, salt :string = globalSalt) :boolean {
-    return this.password.compare(User.getPasswordHash(password, salt)) === 0;
+    return this.password.compare(UserEntity.getPasswordHash(password, salt)) === 0;
   }
 }

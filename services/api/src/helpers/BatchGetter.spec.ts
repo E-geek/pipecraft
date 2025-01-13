@@ -1,5 +1,5 @@
 import { IPieceId } from '@pipecraft/types';
-import { IAttempts } from '@/db/entities/PipeMemory';
+import { IAttempts } from '@/db/entities/PipeEntity';
 import { DirectBatchGetter } from '@/helpers/DirectBatchGetter';
 import { ReverseBatchGetter } from '@/helpers/ReverseBatchGetter';
 

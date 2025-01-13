@@ -10,16 +10,17 @@ import {
 } from 'typeorm';
 import { IBuildingMeta, Nullable } from '@pipecraft/types';
 import { valueTransformerBigint } from '../helpers/valueTransformerBigint';
-import { BuildingType } from './BuildingType';
-import { BuildingRunConfig } from './BuildingRunConfig';
-import { Scheduler } from './Scheduler';
-import { User } from './User';
-import { Manufacture } from './Manufacture';
+import { BuildingTypeEntity } from './BuildingTypeEntity';
+import { BuildingRunConfigEntity } from './BuildingRunConfigEntity';
+import { SchedulerEntity } from './SchedulerEntity';
+import { UserEntity } from './UserEntity';
+import { ManufactureEntity } from './ManufactureEntity';
 
 @Entity({
-  comment: 'Data of build: miner, factory, printer, etc...'
+  comment: 'Data of build: miner, factory, printer, etc...',
+  name: 'building',
 })
-export class Building extends BaseEntity {
+export class BuildingEntity extends BaseEntity {
   @Generated('increment')
   @PrimaryColumn({
     type: 'bigint',
@@ -28,17 +29,17 @@ export class Building extends BaseEntity {
   })
   bid :bigint;
 
-  @ManyToOne(() => Building, build => build.output, {
+  @ManyToOne(() => BuildingEntity, build => build.output, {
     nullable: true,
     lazy: true,
   })
-  input :Promise<Building | null>;
+  input :Promise<BuildingEntity | null>;
 
-  @OneToMany(() => Building, build => build.input, {
+  @OneToMany(() => BuildingEntity, build => build.input, {
     nullable: true,
     lazy: true,
   })
-  output :Promise<Building[] | null>;
+  output :Promise<BuildingEntity[] | null>;
 
   @Column({
     type: 'varchar',
@@ -49,13 +50,13 @@ export class Building extends BaseEntity {
   })
   batchSize :string;
 
-  @ManyToOne(() => Manufacture, manufacture => manufacture.buildings, {
+  @ManyToOne(() => ManufactureEntity, manufacture => manufacture.buildings, {
     nullable: true,
     lazy: true,
     cascade: false,
     onDelete: 'SET NULL',
   })
-  manufacture :Promise<Nullable<Manufacture>>;
+  manufacture :Promise<Nullable<ManufactureEntity>>;
 
   @Column({
     type: 'jsonb',
@@ -64,37 +65,37 @@ export class Building extends BaseEntity {
   })
   meta :IBuildingMeta;
 
-  @ManyToOne(() => BuildingType, {
+  @ManyToOne(() => BuildingTypeEntity, {
     nullable: false,
     eager: true,
     cascade: true,
     onDelete: 'CASCADE',
     onUpdate: 'NO ACTION',
   })
-  type :BuildingType;
+  type :BuildingTypeEntity;
 
-  @OneToMany(() => BuildingRunConfig, buildRunConfig => buildRunConfig.building, {
+  @OneToMany(() => BuildingRunConfigEntity, buildRunConfig => buildRunConfig.building, {
     nullable: true,
     eager: true,
     cascade: true,
   })
-  runConfig :BuildingRunConfig[];
+  runConfig :BuildingRunConfigEntity[];
 
   get lastRunConfig() {
     return (this.runConfig ?? [])[this.runConfig.length - 1];
   }
 
-  @OneToOne(() => Scheduler, scheduler => scheduler.building, {
+  @OneToOne(() => SchedulerEntity, scheduler => scheduler.building, {
     nullable: true,
     cascade: false,
   })
-  scheduler :Scheduler;
+  scheduler :SchedulerEntity;
 
-  @ManyToOne(() => User, {
+  @ManyToOne(() => UserEntity, {
     nullable: false,
     cascade: true,
   })
-  owner :User;
+  owner :UserEntity;
 
   @CreateDateColumn()
   createdAt :Date;

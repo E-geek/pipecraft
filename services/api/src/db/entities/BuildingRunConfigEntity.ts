@@ -1,4 +1,5 @@
 import {
+  BaseEntity,
   Column,
   CreateDateColumn,
   Entity,
@@ -9,13 +10,14 @@ import {
 } from 'typeorm';
 import { IBuildingRunConfigMeta } from '@pipecraft/types';
 import { valueTransformerBigint } from '../helpers/valueTransformerBigint';
-import { Building } from './Building';
-import { RunReport } from './RunReport';
+import { BuildingEntity } from './BuildingEntity';
+import { RunReportEntity } from './RunReportEntity';
 
 @Entity({
-  comment: 'This table stores the run configuration for a building run'
+  comment: 'This table stores the run configuration for a building run',
+  name: 'building_run_config',
 })
-export class BuildingRunConfig {
+export class BuildingRunConfigEntity extends BaseEntity {
   @Generated('increment')
   @PrimaryColumn({
     type: 'bigint',
@@ -24,15 +26,15 @@ export class BuildingRunConfig {
   })
   brcid :bigint;
 
-  @ManyToOne(() => Building, (building) => building.runConfig)
-  building :Building;
+  @ManyToOne(() => BuildingEntity, (building) => building.runConfig)
+  building :BuildingEntity;
 
-  @OneToMany(() => RunReport, runReport => runReport.buildingRunConfig, {
+  @OneToMany(() => RunReportEntity, runReport => runReport.buildingRunConfig, {
     nullable: true,
     lazy: true,
     cascade: true,
   })
-  runReport :Promise<RunReport[]>;
+  runReport :Promise<RunReportEntity[]>;
 
   @Column({
     type: 'jsonb',

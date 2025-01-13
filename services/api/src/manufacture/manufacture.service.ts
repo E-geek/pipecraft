@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { IBuildingRunConfigMeta, IBuildingTypeDescriptor, IPieceMeta, Nullable } from '@pipecraft/types';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Building as BuildingModel } from '@/db/entities/Building';
-import { PipeMemory as PipeModel } from '@/db/entities/PipeMemory';
-import { Manufacture as ManufactureModel } from '@/db/entities/Manufacture';
-import { Piece as PieceModel } from '@/db/entities/Piece';
-import { BuildingRunConfig } from '@/db/entities/BuildingRunConfig';
+import { BuildingEntity } from '@/db/entities/BuildingEntity';
+import { PipeEntity } from '@/db/entities/PipeEntity';
+import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
+import { PieceEntity } from '@/db/entities/PieceEntity';
+import { BuildingRunConfigEntity } from '@/db/entities/BuildingRunConfigEntity';
 import { Manufacture } from '@/manufacture/Manufacture';
 import { IPipe, Pipe } from '@/manufacture/Pipe';
 import { Building, IBuilding } from '@/manufacture/Building';
@@ -19,22 +19,22 @@ export interface IRunManufactureOptions {
 export class ManufactureService {
   private _buildingTypes :Map<string, IBuildingTypeDescriptor> = new Map();
 
-  private readonly _repoBuildings :Repository<BuildingModel>;
+  private readonly _repoBuildings :Repository<BuildingEntity>;
 
-  private readonly _repoBuildingRunConfigs :Repository<BuildingRunConfig>;
+  private readonly _repoBuildingRunConfigs :Repository<BuildingRunConfigEntity>;
 
-  private readonly _repoPipeMemories :Repository<PipeModel>;
+  private readonly _repoPipeMemories :Repository<PipeEntity>;
 
-  private readonly _repoManufactures :Repository<ManufactureModel>;
+  private readonly _repoManufactures :Repository<ManufactureEntity>;
   //piece repo
-  private readonly _repoPieces :Repository<PieceModel>;
+  private readonly _repoPieces :Repository<PieceEntity>;
 
   constructor(
-    @InjectRepository(BuildingModel) repoBuildings :Repository<BuildingModel>,
-    @InjectRepository(PipeModel) repoPipeMemories :Repository<PipeModel>,
-    @InjectRepository(ManufactureModel) repoManufactures :Repository<ManufactureModel>,
-    @InjectRepository(PieceModel) repoPieces :Repository<PieceModel>,
-    @InjectRepository(BuildingRunConfig) repoBuildingRunConfigs :Repository<BuildingRunConfig>,
+    @InjectRepository(BuildingEntity) repoBuildings :Repository<BuildingEntity>,
+    @InjectRepository(PipeEntity) repoPipeMemories :Repository<PipeEntity>,
+    @InjectRepository(ManufactureEntity) repoManufactures :Repository<ManufactureEntity>,
+    @InjectRepository(PieceEntity) repoPieces :Repository<PieceEntity>,
+    @InjectRepository(BuildingRunConfigEntity) repoBuildingRunConfigs :Repository<BuildingRunConfigEntity>,
   ) {
     this._repoBuildings = repoBuildings;
     this._repoPipeMemories = repoPipeMemories;
@@ -43,22 +43,22 @@ export class ManufactureService {
     this._repoBuildingRunConfigs = repoBuildingRunConfigs;
   }
 
-  private onReceive = (from :BuildingModel, pieces :IPieceMeta[]) :PieceModel[] => {
-    const toStoreList :PieceModel[] = [];
+  private onReceive = (from :BuildingEntity, pieces :IPieceMeta[]) :PieceEntity[] => {
+    const toStoreList :PieceEntity[] = [];
     for (const piece of pieces) {
-      const pieceModel = new PieceModel(from, piece);
+      const pieceModel = new PieceEntity(from, piece);
       toStoreList.push(pieceModel);
     }
     return toStoreList;
   };
 
-  private async _setupRunConfigOnDemand(building :BuildingModel, runConfig :IBuildingRunConfigMeta) {
+  private async _setupRunConfigOnDemand(building :BuildingEntity, runConfig :IBuildingRunConfigMeta) {
     const lastConfig = building.lastRunConfig?.runConfig ?? {};
     // deep compare and if different then create new config
     if (JSON.stringify(lastConfig) === JSON.stringify(runConfig)) {
       return;
     }
-    const newConfig = new BuildingRunConfig();
+    const newConfig = new BuildingRunConfigEntity();
     newConfig.runConfig = runConfig;
     newConfig.building = building;
     await this._repoBuildingRunConfigs.save(newConfig, { reload: true });
@@ -121,7 +121,7 @@ export class ManufactureService {
     this._buildingTypes.clear();
   }
 
-  private makeBuildingByModel(buildingModel :Nullable<BuildingModel>) :IBuilding | Error {
+  private makeBuildingByModel(buildingModel :Nullable<BuildingEntity>) :IBuilding | Error {
     if (!buildingModel) {
       return Error('Building node error');
     }
@@ -156,7 +156,7 @@ export class ManufactureService {
         where: {
           from: {
             bid: currentBuildingId,
-          }
+          },
         },
       });
       for (const pipe of pipes) {
@@ -196,7 +196,7 @@ export class ManufactureService {
   public async storeManufacture(manufacture :Manufacture, title ?:string) :Promise<bigint> {
     let model = manufacture.getModel();
     if (!model) {
-      model = new ManufactureModel();
+      model = new ManufactureEntity();
       manufacture.setModel(model);
       await manufacture.make();
     }
@@ -205,7 +205,7 @@ export class ManufactureService {
     return model.mid;
   }
 
-  public async loadManufacture(manufactureModel :ManufactureModel) :Promise<Manufacture | Error> {
+  public async loadManufacture(manufactureModel :ManufactureEntity) :Promise<Manufacture | Error> {
     const manufacture = new Manufacture(this.onReceive, this._repoPieces, manufactureModel);
     const buildingModels = manufactureModel.buildings;
     const pipeModels = manufactureModel.pipes;

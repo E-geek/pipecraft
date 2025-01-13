@@ -71,6 +71,13 @@ module.exports = {
       'arraysInObjects': false,
       'objectsInObjects': false,
     }],
+    semi: ["error", "always"],
+    "semi-spacing": ["error", {"before": false, "after": true}],
+    "comma-dangle": ["error", "always-multiline"],
+    "array-element-newline": ["error", {
+      "ArrayExpression": "consistent",
+      "ArrayPattern": { "minItems": 3 },
+    }],
     'array-bracket-spacing': ['error', 'always', {
       'singleValue': true,
       'objectsInArrays': false,
