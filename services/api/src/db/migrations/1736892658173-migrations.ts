@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class Migrations1736802878713 implements MigrationInterface {
-    name = 'Migrations1736802878713';
+export class Migrations1736892658173 implements MigrationInterface {
+    name = 'Migrations1736892658173';
 
     public async up(queryRunner :QueryRunner) :Promise<void> {
         await queryRunner.query(`
@@ -89,52 +89,6 @@ export class Migrations1736802878713 implements MigrationInterface {
             COMMENT ON TABLE "peer" IS 'Peer for every user login'
         `);
         await queryRunner.query(`
-            CREATE TABLE "pipe" (
-                "pmid" BIGSERIAL NOT NULL,
-                "firstCursor" bigint NOT NULL DEFAULT '-1',
-                "lastCursor" bigint NOT NULL DEFAULT '-1',
-                "ordering" character varying NOT NULL DEFAULT 'direct',
-                "priority" smallint NOT NULL DEFAULT '10',
-                "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
-                "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
-                "reserved" bigint array NOT NULL DEFAULT '{}',
-                "returnedRaw" bigint array NOT NULL DEFAULT '{}',
-                "fromBid" bigint NOT NULL,
-                "toBid" bigint NOT NULL,
-                "manufactureMid" bigint,
-                CONSTRAINT "PK_92dddb56baa086b9d6e83c17132" PRIMARY KEY ("pmid")
-            );
-            COMMENT ON COLUMN "pipe"."pmid" IS 'id and default ordering key';
-            COMMENT ON COLUMN "pipe"."firstCursor" IS 'Minimum piece id which take to a process';
-            COMMENT ON COLUMN "pipe"."lastCursor" IS 'Maximum piece id which take to a process';
-            COMMENT ON COLUMN "pipe"."ordering" IS 'Ordering of getting pieces';
-            COMMENT ON COLUMN "pipe"."priority" IS 'Priority of the process, less is high like in linux, from -20 to 20';
-            COMMENT ON COLUMN "pipe"."reserved" IS 'Pieces hold for processing now';
-            COMMENT ON COLUMN "pipe"."returnedRaw" IS 'Pieces when process failed, crashed, or return the error pieces, format is [pieceId, attempts, pieceId, attempts, ...]';
-            COMMENT ON COLUMN "pipe"."fromBid" IS 'id of the building';
-            COMMENT ON COLUMN "pipe"."toBid" IS 'id of the building';
-            COMMENT ON COLUMN "pipe"."manufactureMid" IS 'id of the manufacture'
-        `);
-        await queryRunner.query(`
-            COMMENT ON TABLE "pipe" IS 'Config for storing which pieces in the process and which pieces is done'
-        `);
-        await queryRunner.query(`
-            CREATE TABLE "manufacture" (
-                "mid" BIGSERIAL NOT NULL,
-                "title" character varying(128) NOT NULL DEFAULT 'New manufacture',
-                "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
-                "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
-                "ownerUid" uuid,
-                CONSTRAINT "PK_373bc2ff293f2cf18cc7cb5ffb9" PRIMARY KEY ("mid")
-            );
-            COMMENT ON COLUMN "manufacture"."mid" IS 'id of the manufacture';
-            COMMENT ON COLUMN "manufacture"."title" IS 'title of the manufacture';
-            COMMENT ON COLUMN "manufacture"."ownerUid" IS 'user id'
-        `);
-        await queryRunner.query(`
-            COMMENT ON TABLE "manufacture" IS 'Data of manufacture: buildings, pipes and schedulers for quick restore'
-        `);
-        await queryRunner.query(`
             CREATE TABLE "user" (
                 "uid" uuid NOT NULL DEFAULT uuid_generate_v4(),
                 "email" character varying(128) NOT NULL,
@@ -158,27 +112,20 @@ export class Migrations1736802878713 implements MigrationInterface {
             COMMENT ON TABLE "user" IS 'User with permissions and roles'
         `);
         await queryRunner.query(`
-            CREATE TABLE "building" (
-                "bid" BIGSERIAL NOT NULL,
-                "batchSize" character varying(32) NOT NULL DEFAULT '1',
-                "meta" jsonb NOT NULL DEFAULT '{}',
+            CREATE TABLE "manufacture" (
+                "mid" BIGSERIAL NOT NULL,
+                "title" character varying(128) NOT NULL DEFAULT 'New manufacture',
                 "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
                 "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
-                "inputBid" bigint,
-                "manufactureMid" bigint,
-                "typeBtid" bigint NOT NULL,
-                "ownerUid" uuid NOT NULL,
-                CONSTRAINT "PK_3b1373b7454af86d505b7636f08" PRIMARY KEY ("bid")
+                "ownerUid" uuid,
+                CONSTRAINT "PK_373bc2ff293f2cf18cc7cb5ffb9" PRIMARY KEY ("mid")
             );
-            COMMENT ON COLUMN "building"."bid" IS 'id of the building';
-            COMMENT ON COLUMN "building"."batchSize" IS 'N parts, N% of ready parts, 0 or 0% - infinite';
-            COMMENT ON COLUMN "building"."inputBid" IS 'id of the building';
-            COMMENT ON COLUMN "building"."manufactureMid" IS 'id of the manufacture';
-            COMMENT ON COLUMN "building"."typeBtid" IS 'type of the building';
-            COMMENT ON COLUMN "building"."ownerUid" IS 'user id'
+            COMMENT ON COLUMN "manufacture"."mid" IS 'id of the manufacture';
+            COMMENT ON COLUMN "manufacture"."title" IS 'title of the manufacture';
+            COMMENT ON COLUMN "manufacture"."ownerUid" IS 'user id'
         `);
         await queryRunner.query(`
-            COMMENT ON TABLE "building" IS 'Data of build: miner, factory, printer, etc...'
+            COMMENT ON TABLE "manufacture" IS 'Data of manufacture: buildings, pipes and schedulers for quick restore'
         `);
         await queryRunner.query(`
             CREATE TABLE "scheduler" (
@@ -206,6 +153,59 @@ export class Migrations1736802878713 implements MigrationInterface {
             COMMENT ON TABLE "scheduler" IS 'Store all schedulers'
         `);
         await queryRunner.query(`
+            CREATE TABLE "building" (
+                "bid" BIGSERIAL NOT NULL,
+                "batchSize" character varying(32) NOT NULL DEFAULT '1',
+                "meta" jsonb NOT NULL DEFAULT '{}',
+                "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+                "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
+                "inputBid" bigint,
+                "manufactureMid" bigint,
+                "typeBtid" bigint NOT NULL,
+                "ownerUid" uuid NOT NULL,
+                CONSTRAINT "PK_3b1373b7454af86d505b7636f08" PRIMARY KEY ("bid")
+            );
+            COMMENT ON COLUMN "building"."bid" IS 'id of the building';
+            COMMENT ON COLUMN "building"."batchSize" IS 'N parts, N% of ready parts, 0 or 0% - infinite';
+            COMMENT ON COLUMN "building"."inputBid" IS 'id of the building';
+            COMMENT ON COLUMN "building"."manufactureMid" IS 'id of the manufacture';
+            COMMENT ON COLUMN "building"."typeBtid" IS 'type of the building';
+            COMMENT ON COLUMN "building"."ownerUid" IS 'user id'
+        `);
+        await queryRunner.query(`
+            COMMENT ON TABLE "building" IS 'Data of build: miner, factory, printer, etc...'
+        `);
+        await queryRunner.query(`
+            CREATE TABLE "pipe" (
+                "pmid" BIGSERIAL NOT NULL,
+                "firstCursor" bigint NOT NULL DEFAULT '-1',
+                "lastCursor" bigint NOT NULL DEFAULT '-1',
+                "ordering" character varying NOT NULL DEFAULT 'direct',
+                "priority" smallint NOT NULL DEFAULT '10',
+                "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
+                "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
+                "holdList" bigint array NOT NULL DEFAULT '{}',
+                "recycleListRaw" bigint array NOT NULL DEFAULT '{}',
+                "fromBid" bigint NOT NULL,
+                "toBid" bigint NOT NULL,
+                "manufactureMid" bigint,
+                CONSTRAINT "PK_92dddb56baa086b9d6e83c17132" PRIMARY KEY ("pmid")
+            );
+            COMMENT ON COLUMN "pipe"."pmid" IS 'id and default ordering key';
+            COMMENT ON COLUMN "pipe"."firstCursor" IS 'Minimum piece id which take to a process';
+            COMMENT ON COLUMN "pipe"."lastCursor" IS 'Maximum piece id which take to a process';
+            COMMENT ON COLUMN "pipe"."ordering" IS 'Ordering of getting pieces';
+            COMMENT ON COLUMN "pipe"."priority" IS 'Priority of the process, less is high like in linux, from -20 to 20';
+            COMMENT ON COLUMN "pipe"."holdList" IS 'Pieces hold for processing now';
+            COMMENT ON COLUMN "pipe"."recycleListRaw" IS 'Pieces when process failed, crashed, or return the error pieces, format is [pieceId, attempts, pieceId, attempts, ...]';
+            COMMENT ON COLUMN "pipe"."fromBid" IS 'id of the building';
+            COMMENT ON COLUMN "pipe"."toBid" IS 'id of the building';
+            COMMENT ON COLUMN "pipe"."manufactureMid" IS 'id of the manufacture'
+        `);
+        await queryRunner.query(`
+            COMMENT ON TABLE "pipe" IS 'Config for storing which pieces in the process and which pieces is done'
+        `);
+        await queryRunner.query(`
             ALTER TABLE "piece"
             ADD CONSTRAINT "FK_3178831a6eb2f5973890a2425cc" FOREIGN KEY ("fromBid") REFERENCES "building"("bid") ON DELETE CASCADE ON UPDATE NO ACTION
         `);
@@ -226,21 +226,17 @@ export class Migrations1736802878713 implements MigrationInterface {
             ADD CONSTRAINT "FK_85b722ce710c00c88605c2b8fee" FOREIGN KEY ("userUid") REFERENCES "user"("uid") ON DELETE NO ACTION ON UPDATE NO ACTION
         `);
         await queryRunner.query(`
-            ALTER TABLE "pipe"
-            ADD CONSTRAINT "FK_899ae5e37d09efc7c3955b18ad7" FOREIGN KEY ("fromBid") REFERENCES "building"("bid") ON DELETE CASCADE ON UPDATE NO ACTION
-        `);
-        await queryRunner.query(`
-            ALTER TABLE "pipe"
-            ADD CONSTRAINT "FK_5e13ccd2de4f316dd1456601b15" FOREIGN KEY ("toBid") REFERENCES "building"("bid") ON DELETE CASCADE ON UPDATE NO ACTION
-        `);
-        await queryRunner.query(`
-            ALTER TABLE "pipe"
-            ADD CONSTRAINT "FK_8d565b29989bf68120388f68d23" FOREIGN KEY ("manufactureMid") REFERENCES "manufacture"("mid") ON DELETE
-            SET NULL ON UPDATE NO ACTION
-        `);
-        await queryRunner.query(`
             ALTER TABLE "manufacture"
             ADD CONSTRAINT "FK_a9c84c767da1f4a8ae3009dde3f" FOREIGN KEY ("ownerUid") REFERENCES "user"("uid") ON DELETE NO ACTION ON UPDATE NO ACTION
+        `);
+        await queryRunner.query(`
+            ALTER TABLE "scheduler"
+            ADD CONSTRAINT "FK_4cf3e619b25ab0c482454a4d073" FOREIGN KEY ("buildingBid") REFERENCES "building"("bid") ON DELETE NO ACTION ON UPDATE NO ACTION
+        `);
+        await queryRunner.query(`
+            ALTER TABLE "scheduler"
+            ADD CONSTRAINT "FK_4647474caf7b001a84634f14407" FOREIGN KEY ("manufactureMid") REFERENCES "manufacture"("mid") ON DELETE
+            SET NULL ON UPDATE NO ACTION
         `);
         await queryRunner.query(`
             ALTER TABLE "building"
@@ -260,22 +256,29 @@ export class Migrations1736802878713 implements MigrationInterface {
             ADD CONSTRAINT "FK_1e6ec795647a3d8dc609d7bf520" FOREIGN KEY ("ownerUid") REFERENCES "user"("uid") ON DELETE NO ACTION ON UPDATE NO ACTION
         `);
         await queryRunner.query(`
-            ALTER TABLE "scheduler"
-            ADD CONSTRAINT "FK_4cf3e619b25ab0c482454a4d073" FOREIGN KEY ("buildingBid") REFERENCES "building"("bid") ON DELETE NO ACTION ON UPDATE NO ACTION
+            ALTER TABLE "pipe"
+            ADD CONSTRAINT "FK_899ae5e37d09efc7c3955b18ad7" FOREIGN KEY ("fromBid") REFERENCES "building"("bid") ON DELETE CASCADE ON UPDATE NO ACTION
         `);
         await queryRunner.query(`
-            ALTER TABLE "scheduler"
-            ADD CONSTRAINT "FK_4647474caf7b001a84634f14407" FOREIGN KEY ("manufactureMid") REFERENCES "manufacture"("mid") ON DELETE
+            ALTER TABLE "pipe"
+            ADD CONSTRAINT "FK_5e13ccd2de4f316dd1456601b15" FOREIGN KEY ("toBid") REFERENCES "building"("bid") ON DELETE CASCADE ON UPDATE NO ACTION
+        `);
+        await queryRunner.query(`
+            ALTER TABLE "pipe"
+            ADD CONSTRAINT "FK_8d565b29989bf68120388f68d23" FOREIGN KEY ("manufactureMid") REFERENCES "manufacture"("mid") ON DELETE
             SET NULL ON UPDATE NO ACTION
         `);
     }
 
     public async down(queryRunner :QueryRunner) :Promise<void> {
         await queryRunner.query(`
-            ALTER TABLE "scheduler" DROP CONSTRAINT "FK_4647474caf7b001a84634f14407"
+            ALTER TABLE "pipe" DROP CONSTRAINT "FK_8d565b29989bf68120388f68d23"
         `);
         await queryRunner.query(`
-            ALTER TABLE "scheduler" DROP CONSTRAINT "FK_4cf3e619b25ab0c482454a4d073"
+            ALTER TABLE "pipe" DROP CONSTRAINT "FK_5e13ccd2de4f316dd1456601b15"
+        `);
+        await queryRunner.query(`
+            ALTER TABLE "pipe" DROP CONSTRAINT "FK_899ae5e37d09efc7c3955b18ad7"
         `);
         await queryRunner.query(`
             ALTER TABLE "building" DROP CONSTRAINT "FK_1e6ec795647a3d8dc609d7bf520"
@@ -290,16 +293,13 @@ export class Migrations1736802878713 implements MigrationInterface {
             ALTER TABLE "building" DROP CONSTRAINT "FK_cef3b6d85207f568aed67e01238"
         `);
         await queryRunner.query(`
+            ALTER TABLE "scheduler" DROP CONSTRAINT "FK_4647474caf7b001a84634f14407"
+        `);
+        await queryRunner.query(`
+            ALTER TABLE "scheduler" DROP CONSTRAINT "FK_4cf3e619b25ab0c482454a4d073"
+        `);
+        await queryRunner.query(`
             ALTER TABLE "manufacture" DROP CONSTRAINT "FK_a9c84c767da1f4a8ae3009dde3f"
-        `);
-        await queryRunner.query(`
-            ALTER TABLE "pipe" DROP CONSTRAINT "FK_8d565b29989bf68120388f68d23"
-        `);
-        await queryRunner.query(`
-            ALTER TABLE "pipe" DROP CONSTRAINT "FK_5e13ccd2de4f316dd1456601b15"
-        `);
-        await queryRunner.query(`
-            ALTER TABLE "pipe" DROP CONSTRAINT "FK_899ae5e37d09efc7c3955b18ad7"
         `);
         await queryRunner.query(`
             ALTER TABLE "peer" DROP CONSTRAINT "FK_85b722ce710c00c88605c2b8fee"
@@ -317,6 +317,18 @@ export class Migrations1736802878713 implements MigrationInterface {
             ALTER TABLE "piece" DROP CONSTRAINT "FK_3178831a6eb2f5973890a2425cc"
         `);
         await queryRunner.query(`
+            COMMENT ON TABLE "pipe" IS NULL
+        `);
+        await queryRunner.query(`
+            DROP TABLE "pipe"
+        `);
+        await queryRunner.query(`
+            COMMENT ON TABLE "building" IS NULL
+        `);
+        await queryRunner.query(`
+            DROP TABLE "building"
+        `);
+        await queryRunner.query(`
             COMMENT ON TABLE "scheduler" IS NULL
         `);
         await queryRunner.query(`
@@ -326,28 +338,16 @@ export class Migrations1736802878713 implements MigrationInterface {
             DROP TABLE "scheduler"
         `);
         await queryRunner.query(`
-            COMMENT ON TABLE "building" IS NULL
-        `);
-        await queryRunner.query(`
-            DROP TABLE "building"
-        `);
-        await queryRunner.query(`
-            COMMENT ON TABLE "user" IS NULL
-        `);
-        await queryRunner.query(`
-            DROP TABLE "user"
-        `);
-        await queryRunner.query(`
             COMMENT ON TABLE "manufacture" IS NULL
         `);
         await queryRunner.query(`
             DROP TABLE "manufacture"
         `);
         await queryRunner.query(`
-            COMMENT ON TABLE "pipe" IS NULL
+            COMMENT ON TABLE "user" IS NULL
         `);
         await queryRunner.query(`
-            DROP TABLE "pipe"
+            DROP TABLE "user"
         `);
         await queryRunner.query(`
             COMMENT ON TABLE "peer" IS NULL

@@ -99,12 +99,12 @@ export class Pipe implements IPipe {
   private async _buildBatchGetter() {
     const { ordering, firstCursor, lastCursor } = this._model;
     const heap = await this._getActualHeap();
-    if (heap.length === 0 && this._model.reserved.length === 0) {
-      return; // no pieces and no reserved
+    if (heap.length === 0 && this._model.holdList.length === 0) {
+      return; // no pieces in heap and hold
     }
     const heapSet = new Set(heap);
-    const recycleSet = new Map<IPieceId, IAttempts>(this._model.returned);
-    const holdSet = new Set(this._model.reserved);
+    const recycleSet = new Map<IPieceId, IAttempts>(this._model.recycleList);
+    const holdSet = new Set(this._model.holdList);
     if (ordering === 'direct') {
       this._batchGetter = new DirectBatchGetter({
         firstCursor: firstCursor as IPieceId,
@@ -146,8 +146,8 @@ export class Pipe implements IPipe {
     }
     this._model.firstCursor = this._batchGetter.firstCursor;
     this._model.lastCursor = this._batchGetter.lastCursor;
-    this._model.reserved = [ ...this._holdSet ];
-    this._model.returned = [ ...this._recycleMap.entries() ];
+    this._model.holdList = [ ...this._holdSet ];
+    this._model.recycleList = [ ...this._recycleMap.entries() ];
     await this._model.save();
     const actualHeap = await this._getActualHeap();
     for (let i = 0; i < actualHeap.length; i++){

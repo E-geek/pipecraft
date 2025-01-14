@@ -106,7 +106,7 @@ export class PipeEntity extends BaseEntity {
     default: [],
     comment: 'Pieces hold for processing now',
   })
-  reserved :IPieceId[];
+  holdList :IPieceId[];
 
   @Column({
     array: true,
@@ -116,24 +116,24 @@ export class PipeEntity extends BaseEntity {
     comment: 'Pieces when process failed, crashed, or return the error pieces, ' +
       'format is [pieceId, attempts, pieceId, attempts, ...]',
   })
-  returnedRaw :bigint[];
+  recycleListRaw :bigint[];
 
-  get returned() :IReturnedPieces {
+  get recycleList() :IReturnedPieces {
     const out :IReturnedPieces = [];
-    for (let i = 0; i < this.returnedRaw.length; i += 2) {
+    for (let i = 0; i < this.recycleListRaw.length; i += 2) {
       out.push([
-        BigInt(this.returnedRaw[i]) as IPieceId,
-        Number(this.returnedRaw[i + 1]) as IAttempts,
+        BigInt(this.recycleListRaw[i]) as IPieceId,
+        Number(this.recycleListRaw[i + 1]) as IAttempts,
       ]);
     }
     return out;
   }
 
-  set returned(value :IReturnedPieces) {
-    this.returnedRaw = [];
+  set recycleList(value :IReturnedPieces) {
+    this.recycleListRaw = [];
     for (const [ pid, attempts ] of value) {
-      this.returnedRaw.push(pid);
-      this.returnedRaw.push(BigInt(attempts));
+      this.recycleListRaw.push(pid);
+      this.recycleListRaw.push(BigInt(attempts));
     }
   }
 }
