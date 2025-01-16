@@ -120,6 +120,9 @@ export class Manufacture implements IManufacture {
     }, batch);
     await this._repoPieces.save(piecesToStore);
     pipe.releaseBatch(res.okResult);
+    if (res.errorResult?.length) {
+      pipe.failBatch(res.errorResult);
+    }
     return res;
   }
 

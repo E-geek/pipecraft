@@ -26,13 +26,16 @@ export class BuildingRunConfigEntity extends BaseEntity {
   })
   brcid :bigint;
 
-  @ManyToOne(() => BuildingEntity, (building) => building.runConfig)
-  building :BuildingEntity;
+  @ManyToOne(() => BuildingEntity, (building) => building.runConfig, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
+  building :Promise<BuildingEntity> | BuildingEntity;
 
   @OneToMany(() => RunReportEntity, runReport => runReport.buildingRunConfig, {
     nullable: true,
     lazy: true,
-    cascade: true,
+    onDelete: 'CASCADE',
   })
   runReport :Promise<RunReportEntity[]>;
 

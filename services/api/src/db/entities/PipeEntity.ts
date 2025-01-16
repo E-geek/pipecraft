@@ -36,7 +36,6 @@ export class PipeEntity extends BaseEntity {
   @ManyToOne(() => BuildingEntity, {
     nullable: false,
     eager: true,
-    cascade: true,
     onDelete: 'CASCADE',
     onUpdate: 'NO ACTION',
   })
@@ -45,7 +44,6 @@ export class PipeEntity extends BaseEntity {
   @ManyToOne(() => BuildingEntity, {
     nullable: false,
     eager: true,
-    cascade: true,
     onDelete: 'CASCADE',
     onUpdate: 'NO ACTION',
   })
@@ -88,7 +86,6 @@ export class PipeEntity extends BaseEntity {
   @ManyToOne(() => ManufactureEntity, {
     nullable: true,
     lazy: true,
-    cascade: false,
     onDelete: 'SET NULL',
   })
   manufacture :Promise<Nullable<ManufactureEntity>>;

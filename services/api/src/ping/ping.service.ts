@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class PingService {
   constructor(private configService :ConfigService) {
-    console.log('secret:', this.configService.get('appSecret'));
+    this.configService.get('appSecret');
   }
 
   ping(data ?:string) {

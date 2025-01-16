@@ -53,8 +53,6 @@ export class TestDBSeeder {
     for (const name of this._listMinimalPipe) {
       const building = new BuildingEntity();
       building.batchSize = '1';
-      building.input = Promise.resolve(null);
-      building.output = Promise.resolve(null);
       building.meta = {
         'test': 'test',
       };
@@ -82,8 +80,6 @@ export class TestDBSeeder {
     const pipeMemoryFP = new PipeEntity();
     pipeMemoryFP.from = factory;
     pipeMemoryFP.to = printer;
-    factory.input = Promise.resolve(miner);
-    printer.input = Promise.resolve(factory);
     await Promise.all([
       queryRunner.manager.save(pipeMemoryMF),
       queryRunner.manager.save(pipeMemoryFP),

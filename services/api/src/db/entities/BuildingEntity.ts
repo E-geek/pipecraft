@@ -29,18 +29,6 @@ export class BuildingEntity extends BaseEntity {
   })
   bid :bigint;
 
-  @ManyToOne(() => BuildingEntity, build => build.output, {
-    nullable: true,
-    lazy: true,
-  })
-  input :Promise<BuildingEntity | null>;
-
-  @OneToMany(() => BuildingEntity, build => build.input, {
-    nullable: true,
-    lazy: true,
-  })
-  output :Promise<BuildingEntity[] | null>;
-
   @Column({
     type: 'varchar',
     length: 32,
@@ -53,7 +41,6 @@ export class BuildingEntity extends BaseEntity {
   @ManyToOne(() => ManufactureEntity, manufacture => manufacture.buildings, {
     nullable: true,
     lazy: true,
-    cascade: false,
     onDelete: 'SET NULL',
   })
   manufacture :Promise<Nullable<ManufactureEntity>>;
@@ -68,7 +55,6 @@ export class BuildingEntity extends BaseEntity {
   @ManyToOne(() => BuildingTypeEntity, {
     nullable: false,
     eager: true,
-    cascade: true,
     onDelete: 'CASCADE',
     onUpdate: 'NO ACTION',
   })
@@ -77,7 +63,7 @@ export class BuildingEntity extends BaseEntity {
   @OneToMany(() => BuildingRunConfigEntity, buildRunConfig => buildRunConfig.building, {
     nullable: true,
     eager: true,
-    cascade: true,
+    onDelete: 'CASCADE',
   })
   runConfig :BuildingRunConfigEntity[];
 
@@ -87,13 +73,13 @@ export class BuildingEntity extends BaseEntity {
 
   @OneToOne(() => SchedulerEntity, scheduler => scheduler.building, {
     nullable: true,
-    cascade: false,
+    onDelete: 'CASCADE',
   })
   scheduler :SchedulerEntity;
 
   @ManyToOne(() => UserEntity, {
     nullable: false,
-    cascade: true,
+    onDelete: 'CASCADE',
   })
   owner :UserEntity;
 

@@ -5,7 +5,7 @@ import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Repository } from 'typeorm';
 
-import { IBuildingTypeDescriptor, IPiece, IPieceMeta } from '@pipecraft/types';
+import { IBuildingTypeDescriptor, IPiece, IPieceId, IPieceMeta } from '@pipecraft/types';
 
 import { BuildingEntity } from '@/db/entities/BuildingEntity';
 import { PipeEntity } from '@/db/entities/PipeEntity';
@@ -26,6 +26,36 @@ describe('ManufactureService', () => {
   let testPrinterRepo :Repository<TestPrinter>;
   let manufactureRepo :Repository<ManufactureEntity>;
   let workingDirectory :string | null = null;
+
+  type IPieceMetaLocal = IPieceMeta & { data :number };
+  type IPieceLocal = IPiece<IPieceMetaLocal>;
+
+  const getMinerDescriptor = (length = 10) :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> => ({
+    gear: async (args) => {
+      const x :IPieceMetaLocal[] = Array.from({ length }, (_, i) => ({ data: i }));
+      args.push(x);
+      return { okResult: []};
+    },
+  });
+  const getFactoryDescriptor = () :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> => ({
+    gear: async (args ) => {
+      const input = args.input;
+      for (const { data :piece } of input) {
+        args.push([{ data: piece.data * 2 }]);
+      }
+      return { okResult: input.map(({ pid }) => pid) };
+    },
+  });
+  const getPrinterDescriptor = (result :IPieceMetaLocal[]) :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> => ({
+    gear: async (args) => {
+      const input = args.input;
+      for (const { data :piece } of input) {
+        result.push({ data: piece.data });
+        args.push([{ data: piece.data }]);
+      }
+      return { okResult: input.map(({ pid }) => pid) };
+    },
+  });
 
   const getDummyBuildingType = () :IBuildingTypeDescriptor => ({
     gear: () => Promise.resolve({
@@ -134,7 +164,17 @@ describe('ManufactureService', () => {
     expect(stored!.pipes).toHaveLength(2);
   });
 
-  it('simple run manufacture', async() => {
+  it('simple run manufacture', async () => {
+    const result = [] as IPieceMetaLocal[];
+    service.registerBuildingType('minerTest', getMinerDescriptor(10));
+    service.registerBuildingType('factoryTest', getFactoryDescriptor());
+    service.registerBuildingType('printerTest', getPrinterDescriptor(result));
+    await service.startFromMining(1n, {});
+    expect(result).toHaveLength(10);
+    expect(result).toMatchObject(Array.from({ length: 10 }, (_, i) => ({ data: i * 2 })));
+  });
+
+  it('simple run manufacture and steps pass', async() => {
     type IPieceMetaLocal = IPieceMeta & { data :number };
     type IPieceLocal = IPiece<IPieceMetaLocal>;
     let processed = 0;
@@ -255,10 +295,38 @@ describe('ManufactureService', () => {
     await service.startFromMining(1n, { runConfig: { path: appTmpDir }});
     const printer = await testPrinterRepo.find({ order: { mid: 'ASC' }});
     expect(printer).toHaveLength(10);
-    console.log(records, printer);
     for (let i = 0; i < 10; i++) {
       expect(printer[i].number).toBe(records[i].num * 2);
       expect(printer[i].string).toBe('p' + records[i].str);
     }
+  });
+
+
+  it('recycle test', async () => {
+    const result = [] as IPieceMetaLocal[];
+    const wrong = new Set<IPieceId>();
+    const factoryDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
+      gear: async (args ) => {
+        const input = args.input;
+        const okResult :IPieceId[] = [];
+        const errorResult :IPieceId[] = [];
+        for (const { pid, data :piece } of input) {
+          if (pid % 2n === 0n && !wrong.has(pid)) {
+            errorResult.push(pid);
+            wrong.add(pid);
+            continue;
+          }
+          args.push([{ data: piece.data * 2 }]);
+        }
+        return { okResult, errorResult };
+      },
+    };
+    service.registerBuildingType('minerTest', getMinerDescriptor(10));
+    service.registerBuildingType('factoryTest', factoryDescriptor);
+    service.registerBuildingType('printerTest', getPrinterDescriptor(result));
+    await service.startFromMining(1n, {});
+    expect(result).toHaveLength(10);
+    expect(result).toMatchObject(Array.from({ length: 10 }, (_, i) => ({ data: i * 2 })));
+    expect(wrong.size).toBe(5);
   });
 });

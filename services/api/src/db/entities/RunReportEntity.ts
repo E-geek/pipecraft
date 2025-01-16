@@ -29,7 +29,7 @@ export class RunReportEntity extends BaseEntity {
   buildingRunConfig :BuildingRunConfigEntity;
 
   @OneToOne(() => PieceEntity, {
-    cascade: true,
+    onDelete: 'CASCADE',
     eager: true,
   })
   @JoinColumn()
