@@ -1,5 +1,4 @@
-import { IPieceId } from '@pipecraft/types';
-import { IAttempts } from '@/db/entities/PipeEntity';
+import { IAttempts, IPieceId } from '@pipecraft/types';
 
 export interface IBatchGetterProps {
   firstCursor :IPieceId;
@@ -7,6 +6,7 @@ export interface IBatchGetterProps {
   holdList :Set<IPieceId>;
   heapList :Set<IPieceId>;
   recycleList :Map<IPieceId, IAttempts>;
+  maxAttempts ?:IAttempts;
 }
 
 export type IHeapLike = Set<IPieceId>|Array<IPieceId>;
@@ -25,6 +25,8 @@ export abstract class BatchGetter implements IBatchGetter {
   protected _holdList :Set<IPieceId>;
   protected _heapList :Set<IPieceId>;
   protected _recycleList :Map<IPieceId, IAttempts>;
+  protected _recycleHoldList :Map<IPieceId, IAttempts>;
+  protected _maxAttempts :IAttempts;
 
   protected constructor(args :IBatchGetterProps) {
     this._firstCursor = args.firstCursor;
@@ -32,6 +34,8 @@ export abstract class BatchGetter implements IBatchGetter {
     this._holdList = args.holdList;
     this._heapList = args.heapList;
     this._recycleList = args.recycleList;
+    this._recycleHoldList = new Map();
+    this._maxAttempts = args.maxAttempts ?? 1 as IAttempts;
   }
 
   /**
@@ -62,6 +66,7 @@ export abstract class BatchGetter implements IBatchGetter {
     for (let i = 0; i < ids.length; i++){
       const id = ids[i];
       this._holdList.delete(id); // Remove IDs from hold list
+      this._recycleHoldList.delete(id); // Remove IDs from recycle hold list
     }
   }
 
@@ -73,7 +78,14 @@ export abstract class BatchGetter implements IBatchGetter {
   public recycle(ids :IPieceId[]) :void {
     for (let i = 0; i < ids.length; i++) {
       const id = ids[i];
-      const attempts = ((this._recycleList.get(id) ?? 0) + 1) as IAttempts;
+      let attempts = 0 as IAttempts;
+      if (this._recycleHoldList.has(id)) {
+        attempts = this._recycleHoldList.get(id)!;
+        this._recycleHoldList.delete(id);
+      } else if (this._recycleList.has(id)) {
+        attempts = this._recycleList.get(id)!;
+      }
+      attempts++;
       this._recycleList.set(id, attempts); // Add IDs directly to recycle list
       this._holdList.delete(id);
     }
@@ -111,7 +123,11 @@ export abstract class BatchGetter implements IBatchGetter {
       if (result.length === size) {
         break;
       }
+      if (this._recycleList.get(candidate)! >= this._maxAttempts) {
+        continue;
+      }
       result.push(candidate);
+      this._recycleHoldList.set(candidate, this._recycleList.get(candidate)!);
       this._holdList.add(candidate);
       this._recycleList.delete(candidate);
     }

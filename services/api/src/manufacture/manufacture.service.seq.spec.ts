@@ -329,4 +329,38 @@ describe('ManufactureService', () => {
     expect(result).toMatchObject(Array.from({ length: 10 }, (_, i) => ({ data: i * 2 })));
     expect(wrong.size).toBe(5);
   });
+
+  it('test on max attempts', async () => {
+    const result = [] as IPieceMetaLocal[];
+    // map<id, attempts>
+    const wrong = new Map<number, number>();
+    const factoryDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
+      gear: async (args ) => {
+        const input = args.input;
+        const okResult :IPieceId[] = [];
+        const errorResult :IPieceId[] = [];
+        for (const { pid, data :piece } of input) {
+          const { data } = piece;
+          if (data % 2 === 0) {
+            errorResult.push(pid);
+            wrong.set(data, (wrong.get(data) ?? 0) + 1);
+            continue;
+          }
+          args.push([{ data: data * 2 }]);
+        }
+        return { okResult, errorResult };
+      },
+    };
+    service.registerBuildingType('minerTest', getMinerDescriptor(10));
+    service.registerBuildingType('factoryTest', factoryDescriptor);
+    service.registerBuildingType('printerTest', getPrinterDescriptor(result));
+    await service.startFromMining(1n, {});
+    expect(result).toHaveLength(5);
+    expect(result).toMatchObject(Array.from({ length: 5 }, (_, i) => ({ data: 2 * (i * 2 + 1) })));
+    expect(wrong.size).toBe(5);
+    for (const [ data, attempts ] of wrong) {
+      expect(data % 2).toBe(0);
+      expect(attempts).toBe(5);
+    }
+  });
 });

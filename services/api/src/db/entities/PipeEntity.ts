@@ -6,12 +6,11 @@ import {
   ManyToOne, PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { IPieceId, Nullable, Opaque } from '@pipecraft/types';
+import { IAttempts, IPieceId, Nullable } from '@pipecraft/types';
 import { valueTransformerBigint } from '../helpers/valueTransformerBigint';
 import { BuildingEntity } from './BuildingEntity';
 import { ManufactureEntity } from './ManufactureEntity';
 
-export type IAttempts = Opaque<number, 'attempts'>;
 export type IReturnedPiece = [IPieceId, IAttempts];
 export type IReturnedPieces = IReturnedPiece[];
 

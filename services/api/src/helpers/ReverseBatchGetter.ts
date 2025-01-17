@@ -1,5 +1,4 @@
-import { IPieceId } from '@pipecraft/types';
-import { IAttempts } from '@/db/entities/PipeEntity';
+import { IAttempts, IPieceId } from '@pipecraft/types';
 import { BatchGetter, IBatchGetterProps } from './BatchGetter';
 
 const sortMap = ([ a ] :[IPieceId, IAttempts], [ b ] :[IPieceId, IAttempts]) => a > b ? -1 : 1;

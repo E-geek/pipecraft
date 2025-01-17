@@ -1,7 +1,7 @@
-import { IPiece, IPieceId } from '@pipecraft/types';
+import { IAttempts, IPiece, IPieceId } from '@pipecraft/types';
 import { FindManyOptions, FindOperator, In, LessThan, MoreThan, Or, Repository } from 'typeorm';
 import { FindOptionsWhere } from 'typeorm/find-options/FindOptionsWhere';
-import { IAttempts, PipeEntity } from '@/db/entities/PipeEntity';
+import { PipeEntity } from '@/db/entities/PipeEntity';
 import { PieceEntity } from '@/db/entities/PieceEntity';
 import { IBuilding } from '@/manufacture/Building';
 import { IManufactureElement } from '@/manufacture/IManufactureElement';
@@ -112,6 +112,7 @@ export class Pipe implements IPipe {
         heapList: heapSet,
         recycleList: recycleSet,
         holdList: holdSet,
+        maxAttempts: this.maxAttempts,
       });
     } else {
       this._batchGetter = new ReverseBatchGetter({
@@ -120,6 +121,7 @@ export class Pipe implements IPipe {
         heapList: heapSet,
         recycleList: recycleSet,
         holdList: holdSet,
+        maxAttempts: this.maxAttempts,
       });
     }
     this._heapSet = heapSet;

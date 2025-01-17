@@ -1,5 +1,4 @@
-import { IPieceId } from '@pipecraft/types';
-import { IAttempts } from '@/db/entities/PipeEntity';
+import { IAttempts, IPieceId } from '@pipecraft/types';
 import { DirectBatchGetter } from '@/helpers/DirectBatchGetter';
 import { ReverseBatchGetter } from '@/helpers/ReverseBatchGetter';
 
@@ -26,6 +25,7 @@ describe('BatchGetter', () => {
       heapList: heapList,
       holdList: holdList,
       recycleList: recycleList,
+      maxAttempts: 100 as IAttempts,
     });
     expect(holdList.size).toBe(0);
     expect(recycleList.size).toBe(0);
@@ -73,6 +73,7 @@ describe('BatchGetter', () => {
       heapList: heapList,
       holdList: holdList,
       recycleList: recycleList,
+      maxAttempts: 100 as IAttempts,
     });
     const r0 = batchGetter.getBatch(4);
     expect(r0).toMatchObject([ 0n, 1n, 2n, 3n ]);
@@ -106,6 +107,7 @@ describe('BatchGetter', () => {
       heapList: heapList,
       holdList: holdList,
       recycleList: recycleList,
+      maxAttempts: 100 as IAttempts,
     });
     expect(holdList.size).toBe(0);
     expect(recycleList.size).toBe(0);
@@ -153,6 +155,7 @@ describe('BatchGetter', () => {
       heapList: heapList,
       holdList: holdList,
       recycleList: recycleList,
+      maxAttempts: 100 as IAttempts,
     });
     const r0 = batchGetter.getBatch(4);
     expect(r0).toMatchObject([ 109n, 108n, 107n, 106n ]);
@@ -173,5 +176,71 @@ describe('BatchGetter', () => {
     batchGetter.release(r3);
     expect(holdList.size).toBe(0);
     expect(recycleList.size).toBe(0);
+  });
+
+  it('test on max attempts', () => {
+    const holdList = new Set<IPieceId>();
+    const recycleList = new Map<IPieceId, IAttempts>();
+    const heapList = new Set(getListIds(10));
+    const batchGetter = new DirectBatchGetter({
+      firstCursor: -1n as IPieceId,
+      lastCursor: -1n as IPieceId,
+      heapList: heapList,
+      holdList: holdList,
+      recycleList: recycleList,
+      maxAttempts: 5 as IAttempts,
+    });
+    let i = 0;
+    while(i++ < 100) {
+      const batch = batchGetter.getBatch(1);
+      if (batch.length === 0) {
+        break;
+      }
+      const [ id ] = batch;
+      if (id % 2n === 0n) {
+        batchGetter.recycle([ id ] );
+      } else {
+        batchGetter.release([ id ]);
+      }
+    }
+    expect(holdList.size).toBe(0);
+    expect(recycleList.size).toBe(5);
+    for (const [ id, attempts ] of recycleList) {
+      expect(attempts).toBe(5);
+      expect(id % 2n).toBe(0n);
+    }
+  });
+
+  it('test on max attempts for reverse', () => {
+    const holdList = new Set<IPieceId>();
+    const recycleList = new Map<IPieceId, IAttempts>();
+    const heapList = new Set(getListIds(10));
+    const batchGetter = new ReverseBatchGetter({
+      firstCursor: -1n as IPieceId,
+      lastCursor: -1n as IPieceId,
+      heapList: heapList,
+      holdList: holdList,
+      recycleList: recycleList,
+      maxAttempts: 5 as IAttempts,
+    });
+    let i = 0;
+    while(i++ < 100) {
+      const batch = batchGetter.getBatch(1);
+      if (batch.length === 0) {
+        break;
+      }
+      const [ id ] = batch;
+      if (id % 2n === 0n) {
+        batchGetter.recycle([ id ] );
+      } else {
+        batchGetter.release([ id ]);
+      }
+    }
+    expect(holdList.size).toBe(0);
+    expect(recycleList.size).toBe(5);
+    for (const [ id, attempts ] of recycleList) {
+      expect(attempts).toBe(5);
+      expect(id % 2n).toBe(0n);
+    }
   });
 });
