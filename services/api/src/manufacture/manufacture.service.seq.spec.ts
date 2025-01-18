@@ -1,3 +1,4 @@
+/* eslint-disable array-element-newline */
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { tmpdir } from 'node:os';
@@ -427,12 +428,9 @@ describe('ManufactureService', () => {
       owner,
     });
     const buildings = [
-      minerTop,
-      minerBottom,
-      factoryTop,
-      factoryBottom,
-      printerTop,
-      printerBottom,
+      minerTop, minerBottom,
+      factoryTop, factoryBottom,
+      printerTop, printerBottom,
     ];
     await buildingRepo.save(buildings);
     await buildingRunConfigRepo.save(buildings.map(buildRunConfig));
@@ -497,7 +495,14 @@ describe('ManufactureService', () => {
     await service.startFromMining(minerTop.bid, {});
     expect(resultTopPrinter).toHaveLength(40);
     expect(resultBottomPrinter).toHaveLength(40);
-    expect(resultTopPrinter.map(p => p.data).sort())
-      .toMatchObject(resultBottomPrinter.map(p => p.data).sort());
+    const sorted = resultTopPrinter
+      .map(p => p.data)
+      .sort((a, b) => a - b);
+    expect(sorted)
+      .toMatchObject(resultBottomPrinter.map(p => p.data).sort((a, b) => a - b));
+    expect(sorted).toMatchObject( [
+      2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 32, 34, 36, 38, 40, 46,
+      101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 116, 117, 118, 119, 120, 123,
+    ]);
   });
 });
