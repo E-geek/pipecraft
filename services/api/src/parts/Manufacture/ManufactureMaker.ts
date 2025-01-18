@@ -1,4 +1,4 @@
-import { IBuildingTypeDescriptor, IPieceMeta, Nullable } from '@pipecraft/types';
+import { IBuildingTypeDescriptor, Nullable } from '@pipecraft/types';
 import { Repository } from 'typeorm';
 import { BuildingEntity } from '@/db/entities/BuildingEntity';
 import { PieceEntity } from '@/db/entities/PieceEntity';
@@ -7,21 +7,22 @@ import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
 import { Manufacture } from '@/parts/Manufacture/Manufacture';
 import { IPipe, Pipe } from '@/parts/Manufacture/Pipe';
 import { Building, IBuilding } from '@/parts/Manufacture/Building';
+import { IOnReceive } from '@/parts/Manufacture/IManufactureElement';
 
 export interface IBuildManufactureArgs {
   startBuildingId :bigint;
   buildingTypes :Map<string, IBuildingTypeDescriptor>;
-  onReceive :(from :BuildingEntity, pieces :IPieceMeta[]) =>PieceEntity[];
+  onReceive :IOnReceive;
   repoPieces :Repository<PieceEntity>;
   repoBuildings :Repository<BuildingEntity>;
   repoPipes :Repository<PipeEntity>;
 }
 
 export interface ILoadManufactureArgs {
-  onReceive :(from :BuildingEntity, pieces :IPieceMeta[]) =>PieceEntity[];
-  buildingTypes :Map<string, IBuildingTypeDescriptor>;
-  manufactureModel :ManufactureEntity;
   repoPieces :Repository<PieceEntity>;
+  manufactureModel :ManufactureEntity;
+  buildingTypes :Map<string, IBuildingTypeDescriptor>;
+  onReceive :IOnReceive;
 }
 
 /**

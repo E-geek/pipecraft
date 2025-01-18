@@ -1,14 +1,15 @@
-import { IBuildingRunResult, IPieceMeta, Nullable } from '@pipecraft/types';
+import { IBuildingRunResult, Nullable } from '@pipecraft/types';
 import { Repository } from 'typeorm';
 import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
-import { BuildingEntity } from '@/db/entities/BuildingEntity';
 import { PieceEntity } from '@/db/entities/PieceEntity';
 import { IBuilding } from '@/parts/Manufacture/Building';
 import { IPipe } from '@/parts/Manufacture/Pipe';
+import { IOnReceive } from '@/parts/Manufacture/IManufactureElement';
 
 export interface IManufacture {
   buildings :IBuilding[];
   pipes :IPipe[];
+  isActive :boolean;
   getModel() :Nullable<ManufactureEntity>;
   setModel(model :ManufactureEntity) :void;
   registerBuilding(building :IBuilding) :void;
@@ -18,7 +19,7 @@ export interface IManufacture {
   mining() :Promise<IBuildingRunResult>;
 }
 
-export type IManufactureOnReceive = (from :BuildingEntity, pieces :IPieceMeta[]) =>PieceEntity[];
+export type IManufactureOnReceive = IOnReceive;
 
 export class Manufacture implements IManufacture {
   private _pipes :Set<IPipe>;
@@ -29,6 +30,8 @@ export class Manufacture implements IManufacture {
   private _onReceive :IManufactureOnReceive;
   private _repoPieces :Repository<PieceEntity>;
 
+  public isActive = false;
+
   constructor(onReceive :IManufactureOnReceive, repoPieces :Repository<PieceEntity>, model :Nullable<ManufactureEntity> = null) {
     this._pipes = new Set();
     this._buildings = new Set();
@@ -38,19 +41,19 @@ export class Manufacture implements IManufacture {
     this._repoPieces = repoPieces;
   }
 
-  getModel() {
+  public getModel() {
     return this._model;
   }
 
-  setModel(model :ManufactureEntity) {
+  public setModel(model :ManufactureEntity) {
     this._model = model;
   }
 
-  registerBuilding(building :IBuilding) {
+  public registerBuilding(building :IBuilding) {
     this._buildings.add(building);
   }
 
-  registerPipe(pipe :IPipe) {
+  public registerPipe(pipe :IPipe) {
     this._pipes.add(pipe);
   }
 
