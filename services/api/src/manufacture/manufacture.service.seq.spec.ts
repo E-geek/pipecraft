@@ -13,6 +13,8 @@ import { SchedulerEntity } from '@/db/entities/SchedulerEntity';
 import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
 import { PieceEntity } from '@/db/entities/PieceEntity';
 import { BuildingRunConfigEntity } from '@/db/entities/BuildingRunConfigEntity';
+import { BuildingTypeEntity } from '@/db/entities/BuildingTypeEntity';
+import { UserEntity } from '@/db/entities/UserEntity';
 import { Manufacture } from '@/parts/Manufacture/Manufacture';
 import { ManufactureService } from './manufacture.service';
 import { getTestDBConf } from '@/test/db.conf';
@@ -26,6 +28,9 @@ describe('ManufactureService', () => {
   let testPrinterRepo :Repository<TestPrinter>;
   let manufactureRepo :Repository<ManufactureEntity>;
   let workingDirectory :string | null = null;
+  let pipeRepo :Repository<PipeEntity>;
+  let buildingRepo :Repository<BuildingEntity>;
+  let buildingRunConfigRepo :Repository<BuildingRunConfigEntity>;
 
   type IPieceMetaLocal = IPieceMeta & { data :number };
   type IPieceLocal = IPiece<IPieceMetaLocal>;
@@ -38,9 +43,9 @@ describe('ManufactureService', () => {
     },
   });
   const getFactoryDescriptor = () :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> => ({
-    gear: async (args ) => {
+    gear: async (args) => {
       const input = args.input;
-      for (const { data :piece } of input) {
+      for (const { data: piece } of input) {
         args.push([{ data: piece.data * 2 }]);
       }
       return { okResult: input.map(({ pid }) => pid) };
@@ -49,7 +54,7 @@ describe('ManufactureService', () => {
   const getPrinterDescriptor = (result :IPieceMetaLocal[]) :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> => ({
     gear: async (args) => {
       const input = args.input;
-      for (const { data :piece } of input) {
+      for (const { data: piece } of input) {
         result.push({ data: piece.data });
         args.push([{ data: piece.data }]);
       }
@@ -87,6 +92,9 @@ describe('ManufactureService', () => {
     testPrinterRepo = module.get<Repository<TestPrinter>>(getRepositoryToken(TestPrinter));
     manufactureRepo = module.get<Repository<ManufactureEntity>>(getRepositoryToken(ManufactureEntity));
     pieceRepo = module.get<Repository<PieceEntity>>(getRepositoryToken(PieceEntity));
+    pipeRepo = module.get<Repository<PipeEntity>>(getRepositoryToken(PipeEntity));
+    buildingRepo = module.get<Repository<BuildingEntity>>(getRepositoryToken(BuildingEntity));
+    buildingRunConfigRepo = module.get<Repository<BuildingRunConfigEntity>>(getRepositoryToken(BuildingRunConfigEntity));
     await manufactureRepo.delete({});
     await testPrinterRepo.delete({});
     await pieceRepo.delete({});
@@ -135,14 +143,14 @@ describe('ManufactureService', () => {
     expect(service.hasBuildingType('test2')).toBe(false);
   });
 
-  it('build manufacture failure success', async() => {
+  it('build manufacture failure success', async () => {
     expect(service.buildManufacture).toBeDefined();
     const manufacture = await service.buildManufacture(1n) as Error;
     expect(manufacture).toBeInstanceOf(Error);
     expect(manufacture.message).toBe('Descriptor for minerTest does not exist');
   });
 
-  it('build manufacture', async() => {
+  it('build manufacture', async () => {
     expect(service.buildManufacture).toBeDefined();
     service.registerBuildingType('minerTest', getDummyBuildingType());
     service.registerBuildingType('factoryTest', getDummyBuildingType());
@@ -174,7 +182,7 @@ describe('ManufactureService', () => {
     expect(result).toMatchObject(Array.from({ length: 10 }, (_, i) => ({ data: i * 2 })));
   });
 
-  it('simple run manufacture and steps pass', async() => {
+  it('simple run manufacture and steps pass', async () => {
     type IPieceMetaLocal = IPieceMeta & { data :number };
     type IPieceLocal = IPiece<IPieceMetaLocal>;
     let processed = 0;
@@ -188,9 +196,9 @@ describe('ManufactureService', () => {
       },
     };
     const factoryDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
-      gear: async (args ) => {
+      gear: async (args) => {
         const input = args.input;
-        for (const { data :piece } of input) {
+        for (const { data: piece } of input) {
           args.push([{ data: piece.data + 1 }]);
         }
         await wait(0);
@@ -201,7 +209,7 @@ describe('ManufactureService', () => {
     const printerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
       gear: async (args) => {
         const input = args.input;
-        for (const { data :piece } of input) {
+        for (const { data: piece } of input) {
           result.push({ data: piece.data + 1 });
           args.push([{ data: piece.data + 1 }]);
         }
@@ -233,10 +241,12 @@ describe('ManufactureService', () => {
     const appTmpDir = await fs.mkdtemp(path.join(tmpdir(), 'test-'));
     workingDirectory = appTmpDir;
     const files = [];
+
     interface IExampleData {
       num :number;
       str :string;
     }
+
     const records :IExampleData[] = [];
     for (let i = 0; i < 10; i++) {
       const file = `${i.toString().padStart(2, '0')}.json`;
@@ -250,7 +260,7 @@ describe('ManufactureService', () => {
     type IPieceLocal = IPiece<IPieceMetaLocal>;
     const minerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
       gear: async (args) => {
-        const tmpDirPath = (args.runConfig as {path :string}).path;
+        const tmpDirPath = (args.runConfig as { path :string }).path;
         let files = await fs.readdir(tmpDirPath);
         files = files.sort();
         for (const file of files) {
@@ -262,9 +272,9 @@ describe('ManufactureService', () => {
       },
     };
     const factoryDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
-      gear: async (args ) => {
+      gear: async (args) => {
         const input = args.input;
-        for (const { data :piece } of input) {
+        for (const { data: piece } of input) {
           args.push([{
             num: piece.num * 2,
             str: 'p' + piece.str,
@@ -278,7 +288,7 @@ describe('ManufactureService', () => {
       gear: async (args) => {
         const input = args.input;
         const awaiter :Promise<unknown>[] = [];
-        for (const { data :piece } of input) {
+        for (const { data: piece } of input) {
           awaiter.push(testPrinterRepo.save({
             number: piece.num,
             string: piece.str,
@@ -301,16 +311,15 @@ describe('ManufactureService', () => {
     }
   });
 
-
   it('recycle test', async () => {
     const result = [] as IPieceMetaLocal[];
     const wrong = new Set<IPieceId>();
     const factoryDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
-      gear: async (args ) => {
+      gear: async (args) => {
         const input = args.input;
         const okResult :IPieceId[] = [];
         const errorResult :IPieceId[] = [];
-        for (const { pid, data :piece } of input) {
+        for (const { pid, data: piece } of input) {
           if (pid % 2n === 0n && !wrong.has(pid)) {
             errorResult.push(pid);
             wrong.add(pid);
@@ -335,11 +344,11 @@ describe('ManufactureService', () => {
     // map<id, attempts>
     const wrong = new Map<number, number>();
     const factoryDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
-      gear: async (args ) => {
+      gear: async (args) => {
         const input = args.input;
         const okResult :IPieceId[] = [];
         const errorResult :IPieceId[] = [];
-        for (const { pid, data :piece } of input) {
+        for (const { pid, data: piece } of input) {
           const { data } = piece;
           if (data % 2 === 0) {
             errorResult.push(pid);
@@ -362,5 +371,133 @@ describe('ManufactureService', () => {
       expect(data % 2).toBe(0);
       expect(attempts).toBe(5);
     }
+  });
+
+  it('2 miners, 2 factories, 2 printers, 8 pipes, 1 manufacture', async () => {
+    const owner = await UserEntity.findOneByOrFail({});
+    const minerType = await BuildingTypeEntity.findOneOrFail({ where: { moduleId: 'minerTest' }});
+    const factoryType = await BuildingTypeEntity.findOneOrFail({ where: { moduleId: 'factoryTest' }});
+    const printerType = await BuildingTypeEntity.findOneOrFail({ where: { moduleId: 'printerTest' }});
+    const printerTypeBottom = new BuildingTypeEntity({
+      moduleId: 'printerTestBottom',
+      title: 'Printer #2',
+      meta: { type: 'printer' },
+    });
+    await printerTypeBottom.save();
+    const buildRunConfig = (building :BuildingEntity) => {
+      const runConfig = new BuildingRunConfigEntity();
+      runConfig.building = building;
+      runConfig.runConfig = {
+        isGenerated: true,
+      };
+      return runConfig;
+    };
+    const minerTop = new BuildingEntity({
+      type: minerType,
+      meta: { description: 'top miner', isPrimary: true },
+      owner,
+    });
+    const minerBottom = new BuildingEntity({
+      type: minerType,
+      meta: { description: 'bottom miner', isEven: true },
+      owner,
+    });
+    const factoryTop = new BuildingEntity({
+      type: factoryType,
+      batchSize: '4',
+      meta: { description: 'top factory', action: '+' },
+      owner,
+    });
+    const factoryBottom = new BuildingEntity({
+      type: factoryType,
+      batchSize: '3',
+      meta: { description: 'bottom factory', action: '*' },
+      owner,
+    });
+    const printerTop = new BuildingEntity({
+      type: printerType,
+      batchSize: '1',
+      meta: { description: 'top printer' },
+      owner,
+    });
+    const printerBottom = new BuildingEntity({
+      type: printerTypeBottom,
+      batchSize: '10',
+      meta: { description: 'bottom printer' },
+      owner,
+    });
+    const buildings = [
+      minerTop,
+      minerBottom,
+      factoryTop,
+      factoryBottom,
+      printerTop,
+      printerBottom,
+    ];
+    await buildingRepo.save(buildings);
+    await buildingRunConfigRepo.save(buildings.map(buildRunConfig));
+    const pipes = [] as PipeEntity[];
+    for (const miner of [ minerTop, minerBottom ]) {
+      for (const factory of [ factoryTop, factoryBottom ]) {
+        const pipe = new PipeEntity();
+        pipe.from = miner;
+        pipe.to = factory;
+        pipes.push(pipe);
+      }
+    }
+    for (const factory of [ factoryTop, factoryBottom ]) {
+      for (const printer of [ printerTop, printerBottom ]) {
+        const pipe = new PipeEntity();
+        pipe.from = factory;
+        pipe.to = printer;
+        pipes.push(pipe);
+      }
+    }
+    const manufacture = new ManufactureEntity({
+      title: 'Cross-pipe manufacture',
+      owner,
+      buildings,
+      pipes,
+    });
+    await pipeRepo.save(pipes);
+    await manufacture.save();
+    const minerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
+      gear: async (args) => {
+        if (args.buildingMeta.isPrimary) {
+          args.push([ 1, 3, 5, 7, 9, 11, 13, 17, 19, 23 ].map(data => ({ data })));
+        }
+        if (args.buildingMeta.isEven) {
+          args.push([ 2, 4, 6, 8, 10, 12, 14, 16, 18, 20 ].map(data => ({ data })));
+        }
+        return { okResult: []};
+      },
+    };
+    const factoryDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
+      gear: async (args) => {
+        const input = args.input;
+        const output = [] as IPieceMetaLocal[];
+        const action = args.buildingMeta.action;
+        for (const { data: piece } of input) {
+          if (action === '+') {
+            output.push({ data: piece.data + 100 });
+          } else if (action === '*') {
+            output.push({ data: piece.data * 2 });
+          }
+        }
+        args.push(output);
+        return { okResult: input.map(p => p.pid) };
+      },
+    };
+    const resultTopPrinter = [] as IPieceMetaLocal[];
+    const resultBottomPrinter = [] as IPieceMetaLocal[];
+    service.registerBuildingType('minerTest', minerDescriptor);
+    service.registerBuildingType('factoryTest', factoryDescriptor);
+    service.registerBuildingType('printerTest', getPrinterDescriptor(resultTopPrinter));
+    service.registerBuildingType('printerTestBottom', getPrinterDescriptor(resultBottomPrinter));
+    await service.startFromMining(minerTop.bid, {});
+    expect(resultTopPrinter).toHaveLength(40);
+    expect(resultBottomPrinter).toHaveLength(40);
+    expect(resultTopPrinter.map(p => p.data).sort())
+      .toMatchObject(resultBottomPrinter.map(p => p.data).sort());
   });
 });

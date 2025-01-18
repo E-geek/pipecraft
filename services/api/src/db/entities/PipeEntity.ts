@@ -24,6 +24,11 @@ export type IReturnedPieces = IReturnedPiece[];
   name: 'pipe',
 })
 export class PipeEntity extends BaseEntity {
+  constructor(props ?:Partial<PipeEntity>) {
+    super();
+    Object.assign(this, props);
+  }
+
   @Generated('increment')
   @PrimaryColumn({
     type: 'bigint',

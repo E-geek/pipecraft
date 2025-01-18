@@ -17,6 +17,11 @@ import { PieceEntity } from './PieceEntity';
   name: 'run_report',
 })
 export class RunReportEntity extends BaseEntity {
+  constructor(props ?:Partial<RunReportEntity>) {
+    super();
+    Object.assign(this, props);
+  }
+
   @Generated('increment')
   @PrimaryColumn({
     type: 'bigint',

@@ -44,8 +44,8 @@ export class ManufactureService {
 
   private onReceive = (from :BuildingEntity, pieces :IPieceMeta[]) :PieceEntity[] => {
     const toStoreList :PieceEntity[] = [];
-    for (const piece of pieces) {
-      const pieceModel = new PieceEntity(from, piece);
+    for (const data of pieces) {
+      const pieceModel = new PieceEntity({ from, data });
       toStoreList.push(pieceModel);
     }
     return toStoreList;

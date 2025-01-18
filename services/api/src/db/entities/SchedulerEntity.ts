@@ -22,6 +22,11 @@ import { ManufactureEntity } from './ManufactureEntity';
   where: '"isActive" = true',
 })
 export class SchedulerEntity extends BaseEntity {
+  constructor(props ?:Partial<SchedulerEntity>) {
+    super();
+    Object.assign(this, props);
+  }
+
   @PrimaryGeneratedColumn('uuid', {
     comment: 'user id',
   })

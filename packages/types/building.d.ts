@@ -1,3 +1,5 @@
-import { Json } from './json';
+import { JsonMap } from './json';
 
-export type IBuildingMeta = Json;
+export interface IBuildingMeta extends JsonMap {
+
+}

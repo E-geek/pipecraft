@@ -19,6 +19,11 @@ let globalSalt = 'NOT_SET_YEST';
   name: 'user',
 })
 export class UserEntity extends BaseEntity {
+  constructor(props ?:Partial<UserEntity>) {
+    super();
+    Object.assign(this, props);
+  }
+
   @PrimaryGeneratedColumn('uuid', {
     comment: 'user id',
   })

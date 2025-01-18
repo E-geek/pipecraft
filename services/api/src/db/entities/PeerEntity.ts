@@ -34,6 +34,11 @@ const generateSecretUntilSuccessOrSafeMethod = (length :number, encoding :Buffer
   name: 'peer',
 })
 export class PeerEntity extends BaseEntity {
+  constructor(props ?:Partial<PeerEntity>) {
+    super();
+    Object.assign(this, props);
+  }
+
   @PrimaryGeneratedColumn('uuid', {
     comment: 'peer id',
   })

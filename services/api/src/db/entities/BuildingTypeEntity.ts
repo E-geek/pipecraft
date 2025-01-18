@@ -7,6 +7,11 @@ import { valueTransformerBigint } from '../helpers/valueTransformerBigint';
   name: 'building_type',
 })
 export class BuildingTypeEntity extends BaseEntity {
+  constructor(props ?:Partial<BuildingTypeEntity>) {
+    super();
+    Object.assign(this, props);
+  }
+
   @Generated('increment')
   @PrimaryColumn({
     type: 'bigint',

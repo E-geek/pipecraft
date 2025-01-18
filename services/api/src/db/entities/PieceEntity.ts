@@ -21,6 +21,10 @@ import { BuildingEntity } from './BuildingEntity';
 })
 @Index([ 'pid', 'from' ], { unique: true })
 export class PieceEntity extends BaseEntity {
+  constructor(props ?:Partial<PieceEntity>) {
+    super();
+    Object.assign(this, props);
+  }
   @Generated('increment')
   @PrimaryColumn({
     type: 'bigint',
@@ -43,14 +47,4 @@ export class PieceEntity extends BaseEntity {
     nullable: false,
   })
   data :IPieceMeta;
-
-  constructor(from ?:BuildingEntity, data ?:IPieceMeta) {
-    super();
-    if (from != null) {
-      this.from = from;
-    }
-    if (data != null) {
-      this.data = data;
-    }
-  }
 }

@@ -21,6 +21,11 @@ import { ManufactureEntity } from './ManufactureEntity';
   name: 'building',
 })
 export class BuildingEntity extends BaseEntity {
+  constructor(props ?:Partial<BuildingEntity>) {
+    super();
+    Object.assign(this, props);
+  }
+
   @Generated('increment')
   @PrimaryColumn({
     type: 'bigint',

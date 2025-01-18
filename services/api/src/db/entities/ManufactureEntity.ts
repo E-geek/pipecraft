@@ -18,6 +18,11 @@ import { SchedulerEntity } from './SchedulerEntity';
   name: 'manufacture',
 })
 export class ManufactureEntity extends BaseEntity {
+  constructor(props ?:Partial<ManufactureEntity>) {
+    super();
+    Object.assign(this, props);
+  }
+
   @Generated('increment')
   @PrimaryColumn({
     type: 'bigint',

@@ -18,6 +18,10 @@ import { RunReportEntity } from './RunReportEntity';
   name: 'building_run_config',
 })
 export class BuildingRunConfigEntity extends BaseEntity {
+  constructor(props ?:Partial<BuildingRunConfigEntity>) {
+    super();
+    Object.assign(this, props);
+  }
   @Generated('increment')
   @PrimaryColumn({
     type: 'bigint',
