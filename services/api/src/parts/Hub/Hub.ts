@@ -8,7 +8,34 @@ import { IOnReceive } from '@/parts/Manufacture/IManufactureElement';
 import { Loop } from '@/parts/Hub/Loop';
 
 export interface IHub {
+  /**
+   * Loading all manufactures to the memory
+   * All manufactures after loading is inactive and not in loop
+   */
+  loadAllManufactures :() =>Promise<IHub | Error>;
 
+  /**
+   * check every pipe in every manufacture for possible to process data
+   * if even one pipe can process data then manufacture will add to loop
+   */
+  activateManufacturesOnDemand :() =>Promise<IHub | Error>;
+
+  /**
+   * Function for call from custom run and scheduler
+   * Inside run only miner and if miner to mine then manufacture will be added to loop
+   * @param minerEntity
+   */
+  runMiner :(minerEntity :ManufactureEntity) =>Promise<IHub | Error>;
+
+  /**
+   * start processing for all factory, printers and other buildings **except** miners
+   */
+  startLoop :() =>IHub;
+
+  /**
+   * pause working the loop
+   */
+  pauseLoop :() =>IHub;
 }
 
 export interface IHubArgs {
@@ -58,5 +85,22 @@ export class Hub implements IHub {
       }
       this._manufactures.set(entity.mid, manufacture);
     }
+    return this;
+  }
+
+  public async activateManufacturesOnDemand() {
+    return this;
+  }
+
+  public async runMiner(minerEntity :ManufactureEntity) {
+    return this;
+  }
+
+  public startLoop() {
+    return this;
+  }
+
+  public pauseLoop() {
+    return this;
   }
 }
