@@ -3,11 +3,11 @@ import { FindManyOptions, FindOperator, In, LessThan, MoreThan, Or, Repository }
 import { FindOptionsWhere } from 'typeorm/find-options/FindOptionsWhere';
 import { PipeEntity } from '@/db/entities/PipeEntity';
 import { PieceEntity } from '@/db/entities/PieceEntity';
-import { IBuilding } from '@/manufacture/Building';
-import { IManufactureElement } from '@/manufacture/IManufactureElement';
-import { IBatchGetter } from '@/helpers/BatchGetter';
-import { DirectBatchGetter } from '@/helpers/DirectBatchGetter';
-import { ReverseBatchGetter } from '@/helpers/ReverseBatchGetter';
+import { IBuilding } from '@/parts/Manufacture/Building';
+import { IManufactureElement } from '@/parts/Manufacture/IManufactureElement';
+import { IBatchGetter } from '@/parts/BatchGetter/BatchGetter';
+import { DirectBatchGetter } from '@/parts/BatchGetter/DirectBatchGetter';
+import { ReverseBatchGetter } from '@/parts/BatchGetter/ReverseBatchGetter';
 
 export interface IPipe extends IManufactureElement {
   type :'pipe';

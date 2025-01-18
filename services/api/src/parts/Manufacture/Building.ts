@@ -2,7 +2,7 @@ import { IBuildingGear, IBuildingPushFunction, IBuildingRunResult, IPiece } from
 import { BuildingTypeEntity } from '@/db/entities/BuildingTypeEntity';
 import { BuildingRunConfigEntity } from '@/db/entities/BuildingRunConfigEntity';
 import { BuildingEntity } from '@/db/entities/BuildingEntity';
-import { IManufactureElement } from '@/manufacture/IManufactureElement';
+import { IManufactureElement } from '@/parts/Manufacture/IManufactureElement';
 
 export interface IBuilding extends IManufactureElement {
   type :'building';

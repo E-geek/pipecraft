@@ -3,8 +3,8 @@ import { Repository } from 'typeorm';
 import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
 import { BuildingEntity } from '@/db/entities/BuildingEntity';
 import { PieceEntity } from '@/db/entities/PieceEntity';
-import { IBuilding } from '@/manufacture/Building';
-import { IPipe } from '@/manufacture/Pipe';
+import { IBuilding } from '@/parts/Manufacture/Building';
+import { IPipe } from '@/parts/Manufacture/Pipe';
 
 export interface IManufacture {
   buildings :IBuilding[];

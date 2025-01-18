@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { IBuildingRunConfigMeta, IBuildingTypeDescriptor, IPieceMeta, Nullable } from '@pipecraft/types';
+import { IBuildingRunConfigMeta, IBuildingTypeDescriptor, IPieceMeta } from '@pipecraft/types';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BuildingEntity } from '@/db/entities/BuildingEntity';
@@ -7,9 +7,8 @@ import { PipeEntity } from '@/db/entities/PipeEntity';
 import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
 import { PieceEntity } from '@/db/entities/PieceEntity';
 import { BuildingRunConfigEntity } from '@/db/entities/BuildingRunConfigEntity';
-import { Manufacture } from '@/manufacture/Manufacture';
-import { IPipe, Pipe } from '@/manufacture/Pipe';
-import { Building, IBuilding } from '@/manufacture/Building';
+import { Manufacture } from '@/parts/Manufacture/Manufacture';
+import { ManufactureMaker } from '@/parts/Manufacture/ManufactureMaker';
 
 export interface IRunManufactureOptions {
   runConfig ?:IBuildingRunConfigMeta;
@@ -121,76 +120,15 @@ export class ManufactureService {
     this._buildingTypes.clear();
   }
 
-  private makeBuildingByModel(buildingModel :Nullable<BuildingEntity>) :IBuilding | Error {
-    if (!buildingModel) {
-      return Error('Building node error');
-    }
-    const descriptor = this._buildingTypes.get(buildingModel.type.moduleId);
-    if (!descriptor) {
-      return Error(`Descriptor for ${buildingModel.type.moduleId} does not exist`);
-    }
-    return new Building(buildingModel, descriptor.gear);
-  }
-
-  public async buildManufacture(startBuildingId :bigint) :Promise<Manufacture | Error> {
-    const manufacture = new Manufacture(this.onReceive, this._repoPieces);
-    const startBuildingModel = await this._repoBuildings.findOne({ where: { bid: startBuildingId }});
-    const startBuilding = this.makeBuildingByModel(startBuildingModel);
-    if (startBuilding instanceof Error) {
-      return startBuilding;
-    }
-    if (!startBuildingModel) {
-      return Error('Building node error');
-    }
-    manufacture.registerBuilding(startBuilding);
-    let i = 0;
-    const registeredPipes = new Map<bigint, IPipe>();
-    const registeredBuildings = new Map<bigint, IBuilding>([[ startBuildingModel.bid, startBuilding ]]);
-    const buildingIdStack = [ startBuildingModel.bid ];
-    while (i++ < 2000) {
-      const currentBuildingId = buildingIdStack.pop();
-      if (!currentBuildingId) {
-        break;
-      }
-      const pipes = await this._repoPipeMemories.find({
-        where: {
-          from: {
-            bid: currentBuildingId,
-          },
-        },
-      });
-      for (const pipe of pipes) {
-        if (registeredPipes.has(pipe.pmid)) {
-          continue;
-        }
-        const buildingTo = pipe.to;
-        if (!registeredBuildings.has(buildingTo.bid)) {
-          const currentBuilding = this.makeBuildingByModel(buildingTo);
-          if (currentBuilding instanceof Error) {
-            return currentBuilding;
-          }
-          manufacture.registerBuilding(currentBuilding);
-          registeredBuildings.set(buildingTo.bid, currentBuilding);
-          buildingIdStack.push(pipe.to.bid);
-        }
-        const from = registeredBuildings.get(pipe.from.bid);
-        const to = registeredBuildings.get(pipe.to.bid);
-        if (!from || !to) {
-          return Error(`Building for pipe ${pipe.pmid} not exists ${pipe.from.bid} -> ${pipe.to.bid};\
-            Problem with ${from ? '' : 'from'}${!from && !to ? ', ' : ''}${to ? '' : 'to'}`);
-        }
-        const currentPipe = new Pipe({
-          pipeMemory: pipe,
-          from,
-          to,
-          heap: this._repoPieces,
-        });
-        manufacture.registerPipe(currentPipe);
-        registeredPipes.set(pipe.pmid, currentPipe);
-      }
-    }
-    manufacture.make();
-    return manufacture;
+  public buildManufacture(startBuildingId :bigint) :Promise<Manufacture | Error> {
+    return ManufactureMaker.buildManufacture({
+      startBuildingId,
+      onReceive: this.onReceive,
+      repoPieces: this._repoPieces,
+      repoBuildings: this._repoBuildings,
+      repoPipes: this._repoPipeMemories,
+      buildingTypes: this._buildingTypes,
+    });
   }
 
   public async storeManufacture(manufacture :Manufacture, title ?:string) :Promise<bigint> {
@@ -206,34 +144,11 @@ export class ManufactureService {
   }
 
   public async loadManufacture(manufactureModel :ManufactureEntity) :Promise<Manufacture | Error> {
-    const manufacture = new Manufacture(this.onReceive, this._repoPieces, manufactureModel);
-    const buildingModels = manufactureModel.buildings;
-    const pipeModels = manufactureModel.pipes;
-    const buildingMap = new Map<bigint, IBuilding>();
-    for (const buildingModel of buildingModels) {
-      const building = this.makeBuildingByModel(buildingModel);
-      if (building instanceof Error) {
-        return building;
-      }
-      manufacture.registerBuilding(building);
-      buildingMap.set(buildingModel.bid, building);
-    }
-    for (const pipeModel of pipeModels) {
-      const from = buildingMap.get(pipeModel.from.bid);
-      const to = buildingMap.get(pipeModel.to.bid);
-      if (!from || !to) {
-        return Error(`Building for pipe ${pipeModel.pmid} not exists ${pipeModel.from.bid} -> ${pipeModel.to.bid};\
-          Problem with ${from ? '' : 'from'}${!from && !to ? ', ' : ''}${to ? '' : 'to'}`);
-      }
-      const pipe = new Pipe({
-        pipeMemory: pipeModel,
-        from,
-        to,
-        heap: this._repoPieces,
-      });
-      manufacture.registerPipe(pipe);
-    }
-    await manufacture.make();
-    return manufacture;
+    return ManufactureMaker.loadManufacture({
+      manufactureModel,
+      onReceive: this.onReceive,
+      repoPieces: this._repoPieces,
+      buildingTypes: this._buildingTypes,
+    });
   }
 }

@@ -1,6 +1,6 @@
 import { IAttempts, IPieceId } from '@pipecraft/types';
-import { DirectBatchGetter } from '@/helpers/DirectBatchGetter';
-import { ReverseBatchGetter } from '@/helpers/ReverseBatchGetter';
+import { DirectBatchGetter } from './DirectBatchGetter';
+import { ReverseBatchGetter } from './ReverseBatchGetter';
 
 describe('BatchGetter', () => {
   const getListIds = (size :number) :IPieceId[] => {

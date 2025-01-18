@@ -13,11 +13,11 @@ import { SchedulerEntity } from '@/db/entities/SchedulerEntity';
 import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
 import { PieceEntity } from '@/db/entities/PieceEntity';
 import { BuildingRunConfigEntity } from '@/db/entities/BuildingRunConfigEntity';
-import { Manufacture } from '@/manufacture/Manufacture';
+import { Manufacture } from '@/parts/Manufacture/Manufacture';
 import { ManufactureService } from './manufacture.service';
 import { getTestDBConf } from '@/test/db.conf';
 import { TestPrinter } from '@/test/TestPrinter';
-import { wait } from '@/helpers/async';
+import { wait } from '@/parts/async';
 
 
 describe('ManufactureService', () => {
