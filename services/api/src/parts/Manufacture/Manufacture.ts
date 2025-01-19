@@ -87,7 +87,7 @@ export class Manufacture implements IManufacture {
     }
   }
 
-  public async mining() :Promise<IBuildingRunResult> {
+  public async mining(minerId ?:bigint) :Promise<IBuildingRunResult> {
     const miners = this.buildings.filter(building => building.isMiner);
     const result :Required<IBuildingRunResult> = {
       okResult: [],

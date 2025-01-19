@@ -11,6 +11,7 @@ export interface IBuilding extends IManufactureElement {
   readonly batchSize :string;
   readonly typeTitle :string;
   readonly isMiner :boolean;
+  readonly isWorks :boolean;
   getModel() :BuildingEntity;
   run(push :IBuildingPushFunction, input ?:IPiece[]) :Promise<IBuildingRunResult>;
 }
@@ -19,6 +20,7 @@ export class Building implements IBuilding {
   private readonly _model :BuildingEntity;
   private readonly _type :BuildingTypeEntity;
   private readonly _gear :IBuildingGear;
+  private _isWorks = false;
   public readonly config :BuildingRunConfigEntity;
 
   public type :IBuilding['type'] = 'building';
@@ -30,15 +32,20 @@ export class Building implements IBuilding {
     this.config = building.lastRunConfig;
   }
 
-  public run(push :IBuildingPushFunction, input :IPiece[] = []) :Promise<IBuildingRunResult> {
-    return this._gear({
-      input,
-      push,
-      runConfig: this._model.lastRunConfig.runConfig,
-      typeMeta: this._type.meta,
-      buildingMeta: this._model.meta,
-      bid: this._model.bid,
-    });
+  public async run(push :IBuildingPushFunction, input :IPiece[] = []) :Promise<IBuildingRunResult> {
+    this._isWorks = true;
+    try {
+      const result = await this._gear({
+        input,
+        push,
+        runConfig: this._model.lastRunConfig.runConfig,
+        typeMeta: this._type.meta,
+        buildingMeta: this._model.meta,
+        bid: this._model.bid,
+      });
+    } catch (error) {
+      console.error(`Building ${this._model.bid} error:`, (error as Error).message);
+    }
   }
 
   getModel() :BuildingEntity {
