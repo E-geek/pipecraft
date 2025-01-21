@@ -136,10 +136,13 @@ export class Hub implements IHub {
   }
 
   public startLoop(target :ILoopName = 'main') {
+    this._manufactureLoopStatuses[target] = 'run';
+    this._loopProcessor(target).then(); // just run and dont await
     return this;
   }
 
   public pauseLoop(target :ILoopName = 'main') {
+    this._manufactureLoopStatuses[target] = 'idle'; // loop stops on next step
     return this;
   }
 
@@ -161,7 +164,7 @@ export class Hub implements IHub {
     let maxTicks = 1000;
     while (maxTicks-- > 0) {
       const next = loop.next();
-      if (next === undefined) {
+      if (next === undefined || this._manufactureLoopStatuses[target] !== 'run') {
         break;
       }
       if (target === 'main') {
