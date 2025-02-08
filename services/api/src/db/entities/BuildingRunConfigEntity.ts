@@ -8,7 +8,7 @@ import {
   OneToMany,
   PrimaryColumn,
 } from 'typeorm';
-import { IBuildingRunConfigMeta } from '@pipecraft/types';
+import { IBuildingRunConfigMeta, Promisable } from '@pipecraft/types';
 import { valueTransformerBigint } from '../helpers/valueTransformerBigint';
 import { BuildingEntity } from './BuildingEntity';
 import { RunReportEntity } from './RunReportEntity';
@@ -34,7 +34,7 @@ export class BuildingRunConfigEntity extends BaseEntity {
     nullable: false,
     onDelete: 'CASCADE',
   })
-  building :Promise<BuildingEntity> | BuildingEntity;
+  building :Promisable<BuildingEntity>;
 
   @OneToMany(() => RunReportEntity, runReport => runReport.buildingRunConfig, {
     nullable: true,

@@ -4,6 +4,7 @@ import { BuildingTypeEntity } from '@/db/entities/BuildingTypeEntity';
 import { BuildingEntity } from '@/db/entities/BuildingEntity';
 import { UserEntity } from '@/db/entities/UserEntity';
 import { BuildingRunConfigEntity } from '@/db/entities/BuildingRunConfigEntity';
+import { PipeEntity } from '@/db/entities/PipeEntity';
 
 export interface IManufactureSchemaItemBase {
   meta ?:JsonMap;
@@ -45,6 +46,7 @@ export type IManufactureSchema = IManufactureSchemaItem[];
  */
 export class MakeManufacture {
   private static _schemaId = 1;
+
   /**
    * Make a simple linear manufacture from scheme and receive ManufactureEntity
    * @param schema
@@ -83,7 +85,8 @@ export class MakeManufacture {
     const buildings = [];
     const runConfigs = [];
     const pipes = [];
-    const owner = await UserEntity.findOneOrFail({});
+    const owner = await UserEntity.findOneOrFail({ where: {}});
+    const title = `Manufacture #${MakeManufacture._schemaId++}`;
     for (const building of schema) {
       let type :IBuildingTypeType = 'logic';
       let moduleId = '';
@@ -100,7 +103,7 @@ export class MakeManufacture {
         moduleId = building.printer;
         batchSize = building.batch ?? '1';
       }
-      if(type === 'logic') {
+      if (type === 'logic') {
         throw new Error('Unknown building type');
       }
       const buildingTypeMeta = building.meta || {};
@@ -109,7 +112,7 @@ export class MakeManufacture {
       const buildingType = new BuildingTypeEntity({
         meta: { type, ...buildingTypeMeta },
         moduleId,
-        title: `${moduleId} from make #${MakeManufacture._schemaId++}`,
+        title: `${moduleId} from make #${title}`,
       });
       const buildingEntity = new BuildingEntity({
         owner,
@@ -124,7 +127,37 @@ export class MakeManufacture {
       buildingTypes.push(buildingType);
       buildings.push(buildingEntity);
       runConfigs.push(runConfig);
-      // todo pipes
     }
+    for (let i = 0; i < buildings.length - 1; i++) {
+      const buildingEntityFrom = buildings[i];
+      const buildingEntityTo = buildings[i + 1];
+      pipes.push(new PipeEntity({
+        from: buildingEntityFrom,
+        to: buildingEntityTo,
+      }));
+    }
+    const manufactureEntity = new ManufactureEntity({
+      pipes,
+      buildings,
+      title,
+      owner,
+      schedulers: [],
+    });
+
+    await BuildingTypeEntity.save(buildingTypes);
+    await BuildingEntity.save(buildings);
+    await BuildingRunConfigEntity.save(runConfigs);
+    await PipeEntity.save(pipes);
+    await manufactureEntity.save();
+
+    for (const buildingEntity of buildings) {
+      buildingEntity.manufacture = manufactureEntity;
+      await buildingEntity.save();
+    }
+    for (const pipeEntity of pipes) {
+      pipeEntity.manufacture = manufactureEntity;
+      await pipeEntity.save();
+    }
+    return manufactureEntity;
   }
 }

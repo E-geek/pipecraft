@@ -89,10 +89,9 @@ export class PipeEntity extends BaseEntity {
 
   @ManyToOne(() => ManufactureEntity, {
     nullable: true,
-    lazy: true,
     onDelete: 'SET NULL',
   })
-  manufacture :Promise<Nullable<ManufactureEntity>>;
+  manufacture :Nullable<ManufactureEntity>;
 
   @CreateDateColumn()
   createdAt :Date;

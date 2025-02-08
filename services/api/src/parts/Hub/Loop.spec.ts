@@ -55,4 +55,12 @@ describe('Loop', () => {
     loop.remove(4);
     expect(loop.has(4)).toBe(false);
   });
+
+  it('only item', () => {
+    const loop = new Loop();
+    loop.add(789);
+    const x = loop.next();
+    expect(x).toBe(789);
+    expect(loop.isEmpty).toBe(false);
+  });
 });

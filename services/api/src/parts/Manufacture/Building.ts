@@ -35,7 +35,7 @@ export class Building implements IBuilding {
   public async run(push :IBuildingPushFunction, input :IPiece[] = []) :Promise<IBuildingRunResult> {
     this._isWorks = true;
     try {
-      const result = await this._gear({
+      return await this._gear({
         input,
         push,
         runConfig: this._model.lastRunConfig.runConfig,
@@ -44,7 +44,12 @@ export class Building implements IBuilding {
         bid: this._model.bid,
       });
     } catch (error) {
-      console.error(`Building ${this._model.bid} error:`, (error as Error).message);
+      console.error(`Run building ${this._model.bid} error:`, (error as Error).message);
+      return {
+        okResult: [],
+        errorResult: input.map(({ pid }) => pid),
+        errorLogs: [ (error as Error).message ],
+      };
     }
   }
 
@@ -64,8 +69,12 @@ export class Building implements IBuilding {
     return this._type.title;
   }
 
-  get isMiner() {
+  get isMiner() :boolean {
     return this._type.meta.type === 'miner';
+  }
+
+  get isWorks() :boolean {
+    return this._isWorks;
   }
 }
 

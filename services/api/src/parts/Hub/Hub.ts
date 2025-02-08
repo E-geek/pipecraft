@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { IBuildingTypeDescriptor } from '@pipecraft/types';
+import { IBuildingTypeDescriptor, Nullable } from '@pipecraft/types';
 import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
 import { PieceEntity } from '@/db/entities/PieceEntity';
 import { BuildingEntity } from '@/db/entities/BuildingEntity';
@@ -7,7 +7,7 @@ import { ManufactureMaker } from '@/parts/Manufacture/ManufactureMaker';
 import { Manufacture } from '@/parts/Manufacture/Manufacture';
 import { IOnReceive } from '@/parts/Manufacture/IManufactureElement';
 import { Loop } from '@/parts/Hub/Loop';
-import { wait } from '@/parts/async';
+import { IPromise, promise, wait } from '@/parts/async';
 
 export type ILoopName = 'main' | 'mining';
 
@@ -50,13 +50,18 @@ export interface IHub {
    * pause working the loop
    */
   pauseLoop :(target ?:ILoopName) =>IHub;
+
+  /**
+   * Wait for loop to be idle (pause or finish)
+   * @param target
+   */
+  awaitForLoop :(target :ILoopName) =>Promise<void>;
 }
 
 export interface IHubArgs {
   repoPieces :Repository<PieceEntity>;
   repoManufacture :Repository<ManufactureEntity>;
   buildingTypes :Map<string, IBuildingTypeDescriptor>;
-  onReceive :IOnReceive;
 }
 
 export class Hub implements IHub {
@@ -64,19 +69,20 @@ export class Hub implements IHub {
   private _repoManufacture :Repository<ManufactureEntity>;
   private _repoPieces :Repository<PieceEntity>;
   private _buildingTypes :Map<string, IBuildingTypeDescriptor>;
-  private _onReceive :IOnReceive;
   private _manufactureLoopStatuses :{
     [key in ILoopName] :'run' | 'idle';
   };
   private _manufactureLoops :{
     [key in ILoopName] :Loop<ILoopMap[key]>;
   };
+  private _manufactureLoopAwaiter :{
+    [key in ILoopName] :Nullable<IPromise<void>>;
+  };
 
   constructor(args :IHubArgs) {
     this._repoManufacture = args.repoManufacture;
     this._repoPieces = args.repoPieces;
     this._buildingTypes = args.buildingTypes;
-    this._onReceive = args.onReceive;
     // init value
     this._manufactures = new Map();
     this._manufactureLoops = {
@@ -87,6 +93,10 @@ export class Hub implements IHub {
       main: 'idle',
       mining: 'idle',
     };
+    this._manufactureLoopAwaiter = {
+      main: null,
+      mining: null,
+    };
   }
 
   private _onManufactureReceive = (manufactureEntity :ManufactureEntity) :IOnReceive => (buildingEntity, pieces) => {
@@ -94,9 +104,14 @@ export class Hub implements IHub {
       const manufacture = this._manufactures.get(manufactureEntity.mid)!;
       if (!this._manufactureLoops.main.has(manufacture)) {
         this._manufactureLoops.main.add(manufacture);
+        if (this._loopShouldBeProcessed('main')) {
+          this._loopProcessor('main').then(); // just run and dont await
+        }
       }
     }
-    return this._onReceive(buildingEntity, pieces);
+    return pieces.map(
+      (piece) => new PieceEntity({ from: buildingEntity, data: piece })
+    );
   };
 
   public async loadAllManufactures() {
@@ -116,6 +131,13 @@ export class Hub implements IHub {
     return this;
   }
 
+  public async awaitForLoop(target :ILoopName) {
+    if (this._manufactureLoopStatuses[target] === 'idle' || this._manufactureLoopAwaiter[target] == null) {
+      return;
+    }
+    return this._manufactureLoopAwaiter[target].promise;
+  }
+
   public async activateManufacturesOnDemand() {
     return this;
   }
@@ -130,7 +152,7 @@ export class Hub implements IHub {
     // if the loop is empty, then main loop processor is stops
     const shouldRunLoop = this._loopShouldBeProcessed('mining');
     if (shouldRunLoop) {
-      this._loopProcessor('mining').then(); // just run and dont await
+      this._loopProcessor('mining').then(); // just run and don't await
     }
     return this;
   }
@@ -154,20 +176,27 @@ export class Hub implements IHub {
    */
   private _loopShouldBeProcessed(target :ILoopName) {
     return this._manufactureLoopStatuses[target] === 'idle'
-      || !this._manufactureLoops[target].isEmpty;
+      && !this._manufactureLoops[target].isEmpty;
   }
 
-  private async _loopProcessor(target :ILoopName = 'main') {
-    this._manufactureLoopStatuses[target] = 'run';
+  private async _loopProcessor(target :ILoopName = 'main', isContinue = false) {
+    if (this._manufactureLoopStatuses[target] !== 'run') {
+      this._manufactureLoopStatuses[target] = 'run';
+      this._manufactureLoopAwaiter[target] = promise();
+    } else if (!isContinue) { // prevent double-run
+      return;
+    }
     const loop = this._manufactureLoops[target];
     await wait(0); // move the process from current EV tick, microtask, task
     let maxTicks = 1000;
+    let paused = false;
     while (maxTicks-- > 0) {
       const next = loop.next();
       if (next === undefined || this._manufactureLoopStatuses[target] !== 'run') {
+        paused = next != null && this._manufactureLoopStatuses[target] !== 'run';
         break;
       }
-      if (target === 'main') {
+      if (target !== 'mining') {
         const manufacture = next as Manufacture;
         const res = await manufacture.tick();
         if (res === null) { // all pipes and all processes don't produce ani piece
@@ -202,6 +231,12 @@ export class Hub implements IHub {
         break;
       }
     }
-    this._manufactureLoopStatuses[target] = 'idle';
+    // if not paused AND we have a work then run next round
+    if (!paused && this._loopShouldBeProcessed(target)) {
+      this._loopProcessor(target, true).then();
+    } else {
+      this._manufactureLoopStatuses[target] = 'idle';
+      this._manufactureLoopAwaiter[target]?.done();
+    }
   }
 }

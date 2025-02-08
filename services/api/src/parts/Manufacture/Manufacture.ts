@@ -76,19 +76,21 @@ export class Manufacture implements IManufacture {
     this._model.pipes = [];
     for (const pipe of this._pipes) {
       const model = pipe.getModel();
-      model.manufacture = Promise.resolve(this._model);
+      model.manufacture = this._model;
       this._model.pipes.push(model);
     }
     this._model.buildings = [];
     for (const building of this._buildings) {
       const model = building.getModel();
-      model.manufacture = Promise.resolve(this._model);
+      model.manufacture = this._model;
       this._model.buildings.push(model);
     }
   }
 
   public async mining(minerId ?:bigint) :Promise<IBuildingRunResult> {
-    const miners = this.buildings.filter(building => building.isMiner);
+    const miners = this.buildings.filter(building =>
+      building.isMiner && (!minerId || building.id === minerId)
+    );
     const result :Required<IBuildingRunResult> = {
       okResult: [],
       errorLogs: [],

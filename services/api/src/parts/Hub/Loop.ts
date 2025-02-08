@@ -42,7 +42,7 @@ export class Loop<T = any> {
     const prev = _items.slice(0, _pointer);
     const next = _items.slice(_pointer);
     this._items = [ ...prev, item, ...next ]; // custom splice
-    this._pointer++;
+    this._pointer = (this._pointer + 1) % this._items.length;
     return this;
   }
 
