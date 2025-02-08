@@ -5,7 +5,6 @@ import { PieceEntity } from '@/db/entities/PieceEntity';
 import { BuildingEntity } from '@/db/entities/BuildingEntity';
 import { ManufactureMaker } from '@/parts/Manufacture/ManufactureMaker';
 import { Manufacture } from '@/parts/Manufacture/Manufacture';
-import { IOnReceive } from '@/parts/Manufacture/IManufactureElement';
 import { Loop } from '@/parts/Hub/Loop';
 import { IPromise, promise, wait } from '@/parts/async';
 
@@ -99,19 +98,15 @@ export class Hub implements IHub {
     };
   }
 
-  private _onManufactureReceive = (manufactureEntity :ManufactureEntity) :IOnReceive => (buildingEntity, pieces) => {
-    if (pieces.length > 0) {
-      const manufacture = this._manufactures.get(manufactureEntity.mid)!;
-      if (!this._manufactureLoops.main.has(manufacture)) {
-        this._manufactureLoops.main.add(manufacture);
-        if (this._loopShouldBeProcessed('main')) {
-          this._loopProcessor('main').then(); // just run and dont await
-        }
+  private _onManufactureReceive = (manufactureEntity :ManufactureEntity) :void => {
+    const manufacture = this._manufactures.get(manufactureEntity.mid)!;
+    if (!this._manufactureLoops.main.has(manufacture)) {
+      this._manufactureLoops.main.add(manufacture);
+      if (this._loopShouldBeProcessed('main')) {
+        this._loopProcessor('main').then(); // just run and dont await
       }
     }
-    return pieces.map(
-      (piece) => new PieceEntity({ from: buildingEntity, data: piece })
-    );
+    return;
   };
 
   public async loadAllManufactures() {
@@ -119,7 +114,9 @@ export class Hub implements IHub {
     for (const entity of manufactureEntities) {
       const manufacture = await ManufactureMaker.loadManufacture({
         manufactureModel: entity,
-        onReceive: this._onManufactureReceive(entity),
+        onReceive: (buildingEntity, pieces) => pieces.map(
+          (piece) => new PieceEntity({ from: buildingEntity, data: piece })
+        ),
         repoPieces: this._repoPieces,
         buildingTypes: this._buildingTypes,
       });
@@ -197,38 +194,15 @@ export class Hub implements IHub {
         break;
       }
       if (target !== 'mining') {
-        const manufacture = next as Manufacture;
-        const res = await manufacture.tick();
-        if (res === null) { // all pipes and all processes don't produce ani piece
-          (loop as Loop<Manufacture>).remove(manufacture);
-          if (loop.isEmpty) {
-            break;
-          }
-        } else if (res instanceof Error) {
-          console.error(
-            `Manufacture ${manufacture.getModel()?.mid}:"${manufacture.getModel()?.title}" has error on tick:`,
-            res.message,
-          );
+        const isLastRun = await this._onePipeTickOfManufacture(next as Manufacture, loop as Loop<Manufacture>);
+        if (isLastRun) {
+          break;
         }
-        continue;
-      }
-      const minerId = next as bigint;
-      const manufactureEntity = await this._repoManufacture.findOneBy({
-        buildings: {
-          bid: minerId,
-        },
-      });
-      if (manufactureEntity) {
-        const manufacture = this._manufactures.get(manufactureEntity.mid);
-        if (!manufacture) {
-          console.error(`Manufacture by entity ${manufactureEntity.mid} not found`);
-        } else {
-          await manufacture.mining(minerId);
+      } else {
+        const isLastRun = await this._mimingOfManufacture(next as bigint, loop as Loop<bigint>);
+        if (isLastRun) {
+          break;
         }
-      }
-      (loop as Loop<bigint>).remove(minerId);
-      if (loop.isEmpty) {
-        break;
       }
     }
     // if not paused AND we have a work then run next round
@@ -238,5 +212,43 @@ export class Hub implements IHub {
       this._manufactureLoopStatuses[target] = 'idle';
       this._manufactureLoopAwaiter[target]?.done();
     }
+  }
+
+  private async _onePipeTickOfManufacture(manufacture :Manufacture, loop :Loop<Manufacture>) {
+    const res = await manufacture.tick();
+    if (res === null) { // all pipes and all processes don't produce ani piece
+      (loop as Loop<Manufacture>).remove(manufacture);
+      if (loop.isEmpty) {
+        return false;
+      }
+    } else if (res instanceof Error) {
+      console.error(
+        `Manufacture ${manufacture.getModel()?.mid}:"${manufacture.getModel()?.title}" has error on tick:`,
+        res.message,
+      );
+    }
+    return true;
+  }
+
+  private async _mimingOfManufacture(minerId :bigint, loop :Loop<bigint>) {
+    const manufactureEntity = await this._repoManufacture.findOneBy({
+      buildings: {
+        bid: minerId,
+      },
+    });
+    if (manufactureEntity) {
+      const manufacture = this._manufactures.get(manufactureEntity.mid);
+      if (!manufacture) {
+        console.error(`Manufacture by entity ${manufactureEntity.mid} not found`);
+      } else {
+        const res = await manufacture.mining(minerId);
+        if (res.addNewPieces > 0) {
+          this._onManufactureReceive(manufactureEntity);
+        }
+      }
+    }
+    (loop as Loop<bigint>).remove(minerId);
+    return !loop.isEmpty;
+
   }
 }

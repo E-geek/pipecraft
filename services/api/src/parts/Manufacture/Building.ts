@@ -35,20 +35,30 @@ export class Building implements IBuilding {
   public async run(push :IBuildingPushFunction, input :IPiece[] = []) :Promise<IBuildingRunResult> {
     this._isWorks = true;
     try {
-      return await this._gear({
+      let addNewPieces = 0;
+      const pushTo :IBuildingPushFunction = (pieces) => {
+        addNewPieces += pieces.length;
+        return push(pieces);
+      };
+      const res =  await this._gear({
         input,
-        push,
+        push: pushTo,
         runConfig: this._model.lastRunConfig.runConfig,
         typeMeta: this._type.meta,
         buildingMeta: this._model.meta,
         bid: this._model.bid,
       });
+      return {
+        ...res,
+        addNewPieces,
+      } as IBuildingRunResult;
     } catch (error) {
       console.error(`Run building ${this._model.bid} error:`, (error as Error).message);
       return {
         okResult: [],
         errorResult: input.map(({ pid }) => pid),
         errorLogs: [ (error as Error).message ],
+        addNewPieces: 0,
       };
     }
   }

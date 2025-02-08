@@ -95,6 +95,7 @@ export class Manufacture implements IManufacture {
       okResult: [],
       errorLogs: [],
       errorResult: [],
+      addNewPieces: 0,
     };
     for (const miner of miners) {
       const piecesToStore :PieceEntity[] = [];
@@ -102,6 +103,7 @@ export class Manufacture implements IManufacture {
         piecesToStore.push(...this._onReceive(miner.getModel(), pieces));
       });
       await this._repoPieces.save(piecesToStore);
+      result.addNewPieces += out.addNewPieces;
       result.okResult.push(...out.okResult);
       if (out.errorLogs) {
         result.errorLogs.push(...out.errorLogs);
@@ -157,7 +159,7 @@ export class Manufacture implements IManufacture {
       this._nullCursor = -1;
       return result;
     }
-    return { okResult: []};
+    return { okResult: [], addNewPieces: 0 };
   }
 
   public get buildings() {
