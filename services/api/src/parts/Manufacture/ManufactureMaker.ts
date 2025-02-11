@@ -46,7 +46,7 @@ export class ManufactureMaker {
    * @param args :IBuildManufactureArgs
    * @returns Promise<Manufacture | Error>
    */
-  public static async  buildManufacture(args :IBuildManufactureArgs) :Promise<Manufacture | Error> {
+  public static async buildManufacture(args :IBuildManufactureArgs) :Promise<Manufacture | Error> {
     const {
       startBuildingId,
       buildingTypes,
@@ -54,7 +54,7 @@ export class ManufactureMaker {
       repoPieces,
       repoBuildings,
       repoPipes,
-    } =args;
+    } = args;
     const manufacture = new Manufacture(onReceive, repoPieces);
     const startBuildingModel = await repoBuildings.findOne({ where: { bid: startBuildingId }});
     const startBuilding = this.makeBuildingByModel(startBuildingModel, buildingTypes);
@@ -75,25 +75,35 @@ export class ManufactureMaker {
         break;
       }
       const pipes = await repoPipes.find({
-        where: {
-          from: {
-            bid: currentBuildingId,
+        where: [
+          {
+            from: {
+              bid: currentBuildingId,
+            },
           },
-        },
+          {
+            to: {
+              bid: currentBuildingId,
+            },
+          },
+        ],
       });
       for (const pipe of pipes) {
         if (registeredPipes.has(pipe.pmid)) {
           continue;
         }
         const buildingTo = pipe.to;
-        if (!registeredBuildings.has(buildingTo.bid)) {
-          const currentBuilding = this.makeBuildingByModel(buildingTo, buildingTypes);
-          if (currentBuilding instanceof Error) {
-            return currentBuilding;
+        const buildingFrom = pipe.from;
+        for (const buildingTarget of [ buildingTo, buildingFrom ]) {
+          if (!registeredBuildings.has(buildingTarget.bid)) {
+            const currentBuilding = this.makeBuildingByModel(buildingTarget, buildingTypes);
+            if (currentBuilding instanceof Error) {
+              return currentBuilding;
+            }
+            manufacture.registerBuilding(currentBuilding);
+            registeredBuildings.set(buildingTarget.bid, currentBuilding);
+            buildingIdStack.push(pipe.to.bid);
           }
-          manufacture.registerBuilding(currentBuilding);
-          registeredBuildings.set(buildingTo.bid, currentBuilding);
-          buildingIdStack.push(pipe.to.bid);
         }
         const from = registeredBuildings.get(pipe.from.bid);
         const to = registeredBuildings.get(pipe.to.bid);

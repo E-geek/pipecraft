@@ -131,5 +131,8 @@ describe('Hub', () => {
     await hub.awaitForLoop('mining');
     await hub.awaitForLoop('main');
     expect(printerChunks).toHaveLength(3);
+    expect(printerChunks[0]).toEqual([ 21, 22, 23, 24 ]);
+    expect(printerChunks[1]).toEqual([ 25, 26, 27, 28 ]);
+    expect(printerChunks[2]).toEqual([ 29, 30 ]);
   });
 });

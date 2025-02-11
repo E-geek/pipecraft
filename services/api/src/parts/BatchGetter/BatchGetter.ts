@@ -16,7 +16,7 @@ export interface IBatchGetter {
   readonly lastCursor :IPieceId;
   getBatch(size :number) :IPieceId[];
   release(ids :IPieceId[]) :void;
-  recycle(ids :IPieceId[]) :void;
+  recycle(ids :IPieceId[], noAffectAttempts ?:boolean) :void;
 }
 
 export abstract class BatchGetter implements IBatchGetter {
@@ -74,8 +74,9 @@ export abstract class BatchGetter implements IBatchGetter {
    * recycle ids (on fail or when skipped)
    * release these ids from hold
    * @param ids IPieceId[]
+   * @param noAffectAttempts
    */
-  public recycle(ids :IPieceId[]) :void {
+  public recycle(ids :IPieceId[], noAffectAttempts = false) :void {
     for (let i = 0; i < ids.length; i++) {
       const id = ids[i];
       let attempts = 0 as IAttempts;
@@ -85,7 +86,9 @@ export abstract class BatchGetter implements IBatchGetter {
       } else if (this._recycleList.has(id)) {
         attempts = this._recycleList.get(id)!;
       }
-      attempts++;
+      if (!noAffectAttempts) {
+        attempts++;
+      }
       this._recycleList.set(id, attempts); // Add IDs directly to recycle list
       this._holdList.delete(id);
     }

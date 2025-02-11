@@ -103,7 +103,7 @@ export class Hub implements IHub {
     if (!this._manufactureLoops.main.has(manufacture)) {
       this._manufactureLoops.main.add(manufacture);
       if (this._loopShouldBeProcessed('main')) {
-        this._loopProcessor('main').then(); // just run and dont await
+        this._loopProcessor('main').then(); // just run and don't await
       }
     }
     return;
@@ -156,7 +156,7 @@ export class Hub implements IHub {
 
   public startLoop(target :ILoopName = 'main') {
     this._manufactureLoopStatuses[target] = 'run';
-    this._loopProcessor(target).then(); // just run and dont await
+    this._loopProcessor(target).then(); // just run and don't await
     return this;
   }
 
@@ -214,12 +214,19 @@ export class Hub implements IHub {
     }
   }
 
+  /**
+   * Tick of manufacture from loop if possible
+   * @param manufacture
+   * @param loop
+   * @return true if is finished
+   * @private
+   */
   private async _onePipeTickOfManufacture(manufacture :Manufacture, loop :Loop<Manufacture>) {
     const res = await manufacture.tick();
     if (res === null) { // all pipes and all processes don't produce ani piece
       (loop as Loop<Manufacture>).remove(manufacture);
       if (loop.isEmpty) {
-        return false;
+        return true;
       }
     } else if (res instanceof Error) {
       console.error(
@@ -227,7 +234,7 @@ export class Hub implements IHub {
         res.message,
       );
     }
-    return true;
+    return false;
   }
 
   private async _mimingOfManufacture(minerId :bigint, loop :Loop<bigint>) {
@@ -248,7 +255,6 @@ export class Hub implements IHub {
       }
     }
     (loop as Loop<bigint>).remove(minerId);
-    return !loop.isEmpty;
-
+    return loop.isEmpty;
   }
 }

@@ -10,7 +10,7 @@ module.exports = {
     '@/(.*)': '<rootDir>/$1',
   },
   rootDir: 'src',
-  testRegex: '.*\\.spec\\.ts$',
+  testRegex: '.*\\.seq\\.spec\\.ts$',
   transform: {
     '^.+\\.tsx?$': [
       'ts-jest',
@@ -20,7 +20,7 @@ module.exports = {
     ],
   },
   collectCoverageFrom: [
-    '**/*.(t|j)s'
+    '**/*.(t|j)s',
   ],
   coverageDirectory: '../coverage',
   testEnvironment: 'node',
@@ -42,5 +42,5 @@ module.exports = {
   reporters: [ 'default', 'jest-junit' ],
   globalSetup: '<rootDir>/jest.setup.ts',
   setupFilesAfterEnv: [ 'jest-extended/all' ],
-  testTimeout: 2 * 60 * 1000
+  testTimeout: 2 * 60 * 1000,
 };

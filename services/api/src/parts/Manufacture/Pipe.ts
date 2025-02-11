@@ -33,6 +33,7 @@ export interface IPipeParams {
   from :IBuilding;
   to :IBuilding;
   heap :Repository<PieceEntity>;
+  maximumAllocateBatchForPercent ?:number;
 }
 
 export class Pipe implements IPipe {
@@ -46,6 +47,7 @@ export class Pipe implements IPipe {
   };
   private _batchGetter :IBatchGetter;
 
+  public readonly maximumAllocateBatchForPercent :number = 1000;
   public readonly maxAttempts = 5 as IAttempts;
   public readonly maxHistoryDepth = 1000 * 60 * 60 * 24 * 30 * 3; // 3 months
 
@@ -56,7 +58,7 @@ export class Pipe implements IPipe {
 
   public type :IPipe['type'] = 'pipe';
 
-  constructor({ pipeMemory, from, to, heap } :IPipeParams) {
+  constructor({ pipeMemory, from, to, heap, maximumAllocateBatchForPercent } :IPipeParams) {
     this._model = pipeMemory;
     this._from = from;
     this._to = to;
@@ -65,6 +67,9 @@ export class Pipe implements IPipe {
     const batchSizeRaw = this._to.batchSize;
     const isPercent = batchSizeRaw[batchSizeRaw.length - 1] === '%';
     const size = parseInt(batchSizeRaw, 10);
+    if (maximumAllocateBatchForPercent != null) {
+      this.maximumAllocateBatchForPercent = maximumAllocateBatchForPercent;
+    }
     if (size === 0) {
       this._batchSize = {
         size: 100,
@@ -187,18 +192,15 @@ export class Pipe implements IPipe {
   }
 
   public async getBatch() :Promise<IPiece[]> {
-    if (this._batchSize.isPercent) {
-      return []; // not ready
-    }
     await this.make();
     if (!this._batchGetter) {
       return [];
     }
-    const batch = this._batchGetter.getBatch(this._batchSize.size);
-    if (batch.length < this._batchSize.size) {
-      await this.sync();
-      const addForBatch = this._batchGetter.getBatch(this._batchSize.size);
-      batch.push(...addForBatch);
+    let batch :IPieceId[];
+    if (this._batchSize.isPercent) {
+      batch = await this._getIdsByPercent();
+    } else {
+      batch = await this._getIdsByCount();
     }
     const pieces = await this._heap.find({
       select: [ 'pid', 'data' ],
@@ -207,6 +209,30 @@ export class Pipe implements IPipe {
       },
     });
     return pieces.map(({ pid, data }) => ({ data, pid } as IPiece));
+  }
+
+  private async _getIdsByCount() :Promise<IPieceId[]> {
+    const batch = this._batchGetter.getBatch(this._batchSize.size);
+    if (batch.length < this._batchSize.size) {
+      await this.sync();
+      const addForBatch = this._batchGetter.getBatch(this._batchSize.size);
+      batch.push(...addForBatch);
+    }
+    return batch;
+  }
+
+  private async _getIdsByPercent() :Promise<IPieceId[]> {
+    let batch = this._batchGetter.getBatch(this.maximumAllocateBatchForPercent);
+    if (batch.length === 0) {
+      await this.sync();
+      batch = this._batchGetter.getBatch(this.maximumAllocateBatchForPercent);
+    }
+    // then take a % and other items push to recycle without increment attempts
+    const count = Math.ceil(batch.length * this._batchSize.size / 100);
+    const output = batch.slice(0, count);
+    const recycle = batch.slice(count);
+    this._batchGetter.recycle(recycle, true);
+    return output;
   }
 
   releaseBatch(pid :IPieceId[]) {
