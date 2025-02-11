@@ -37,7 +37,7 @@ export class ManufactureMaker {
     if (!descriptor) {
       return Error(`Descriptor for ${buildingModel.type.moduleId} does not exist`);
     }
-    return new Building(buildingModel, descriptor.gear);
+    return new Building(buildingModel, descriptor);
   }
 
   /**

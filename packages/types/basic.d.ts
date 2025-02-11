@@ -16,6 +16,10 @@ export type Primitive = string | number | bigint | boolean | symbol | null | und
 
 export type Promisable<T> = T | Promise<T>;
 
+export type Constructor<T> = {
+  new (...args :any[]) :T;
+};
+
 /**
  * @link https://stackoverflow.com/questions/65577843/mutually-exclusive-props-in-a-react-component
  */

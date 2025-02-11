@@ -6,6 +6,7 @@ import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConne
 import { dotEnvPath } from '../config/config';
 import dbConfig from '../config/db.config';
 import { TestPrinter } from './TestPrinter';
+import { Migrations1739299794578 } from './1739299794578-migrations';
 
 config({
   path: dotEnvPath,
@@ -16,5 +17,6 @@ export const getTestDBConf = () => {
   const conf :Writable<PostgresConnectionOptions> = JSON.parse(JSON.stringify(dataSourceConfig));
   conf.entities = [ TestPrinter, ...(conf.entities as string[]) ];
   conf.logging = false;
+  conf.migrations = [ Migrations1739299794578,  ...(conf.migrations as string[]) ];
   return conf;
 };

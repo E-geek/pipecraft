@@ -21,6 +21,7 @@ import { ManufactureService } from './manufacture.service';
 import { getTestDBConf } from '@/test/db.conf';
 import { TestPrinter } from '@/test/TestPrinter';
 import { wait } from '@/parts/async';
+import { Migrations1739299794578 } from '@/test/1739299794578-migrations';
 
 
 describe('ManufactureService', () => {
@@ -288,16 +289,24 @@ describe('ManufactureService', () => {
     const printerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
       gear: async (args) => {
         const input = args.input;
+        const [[ TestPrinterRepo, TestPrinterClass ]] = args.memory;
+
         const awaiter :Promise<unknown>[] = [];
         for (const { data: piece } of input) {
-          awaiter.push(testPrinterRepo.save({
+          const memory = new TestPrinterClass({
             number: piece.num,
             string: piece.str,
             bid: args.bid,
-          }));
+          });
+          awaiter.push(memory.save());
         }
         await Promise.allSettled(awaiter);
+        await TestPrinterRepo.countBy({});
         return { okResult: input.map(p => p.pid) };
+      },
+      memory: {
+        migrations: [ Migrations1739299794578 ],
+        entities: [ TestPrinter ],
       },
     };
     service.registerBuildingType('minerTest', minerDescriptor);

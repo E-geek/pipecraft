@@ -5,6 +5,11 @@ import { Memory } from '../db/entities/Memory';
   name: 'memory_test_printer',
 })
 export class TestPrinter extends Memory {
+  constructor(props ?:Partial<TestPrinter>) {
+    super();
+    Object.assign(this, props);
+  }
+
   @Column({
     type: 'varchar',
     length: 64,

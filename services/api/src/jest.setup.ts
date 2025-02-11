@@ -55,7 +55,6 @@ const setupDatabase = async () => {
     // Применяем миграции
     console.log('⏳ Применяем миграции...');
     await dataSource.runMigrations();
-    await dataSource.synchronize();
 
     // Заполняем тестовыми данными
     console.log('⏳ Заполняем тестовыми данными...');

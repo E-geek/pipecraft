@@ -1,4 +1,12 @@
-import { IBuildingGear, IBuildingPushFunction, IBuildingRunResult, IPiece } from '@pipecraft/types';
+import {
+  Constructor,
+  IBuildingGear, IBuildingMemory,
+  IBuildingPushFunction,
+  IBuildingRunResult,
+  IBuildingTypeDescriptor,
+  IPiece,
+} from '@pipecraft/types';
+import { BaseEntity, Repository } from 'typeorm';
 import { BuildingTypeEntity } from '@/db/entities/BuildingTypeEntity';
 import { BuildingRunConfigEntity } from '@/db/entities/BuildingRunConfigEntity';
 import { BuildingEntity } from '@/db/entities/BuildingEntity';
@@ -21,15 +29,23 @@ export class Building implements IBuilding {
   private readonly _type :BuildingTypeEntity;
   private readonly _gear :IBuildingGear;
   private _isWorks = false;
+  private _memory :[Repository<IBuildingMemory>, Constructor<IBuildingMemory>][];
   public readonly config :BuildingRunConfigEntity;
 
   public type :IBuilding['type'] = 'building';
 
-  constructor(building :BuildingEntity, gear :IBuildingGear) {
+  constructor(building :BuildingEntity, descriptor :IBuildingTypeDescriptor) {
     this._model = building;
     this._type = building.type;
-    this._gear = gear;
+    this._gear = descriptor.gear;
     this.config = building.lastRunConfig;
+    if (descriptor.memory?.entities.length) {
+      this._memory = descriptor.memory.entities.slice().map((classObject) => {
+        return [ (classObject as unknown as typeof BaseEntity).getRepository() as Repository<IBuildingMemory>, classObject ];
+      });
+    } else {
+      this._memory = [];
+    }
   }
 
   public async run(push :IBuildingPushFunction, input :IPiece[] = []) :Promise<IBuildingRunResult> {
@@ -47,6 +63,7 @@ export class Building implements IBuilding {
         typeMeta: this._type.meta,
         buildingMeta: this._model.meta,
         bid: this._model.bid,
+        memory: this._memory,
       });
       return {
         ...res,
