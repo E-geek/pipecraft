@@ -11,6 +11,7 @@ export type IBuildingTypeType = 'miner' | 'factory' | 'printer' | 'logic';
 
 export interface IBuildingTypeMeta extends JsonMap {
   type :IBuildingTypeType;
+  isExclusive ?:boolean;
 }
 
 export type IBuildingPushFunction<OutputType = IPieceMeta> = (pieces :OutputType[]) =>Promisable<void>;

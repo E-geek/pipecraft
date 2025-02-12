@@ -1,4 +1,4 @@
-import { IBuildingRunResult, Nullable } from '@pipecraft/types';
+import { IBuildingRunResult, IPiece, Nullable } from '@pipecraft/types';
 import { Repository } from 'typeorm';
 import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
 import { PieceEntity } from '@/db/entities/PieceEntity';
@@ -7,8 +7,10 @@ import { IPipe } from '@/parts/Manufacture/Pipe';
 import { IOnReceive } from '@/parts/Manufacture/IManufactureElement';
 
 export interface IManufacture {
-  buildings :IBuilding[];
-  pipes :IPipe[];
+  readonly id :bigint;
+  readonly buildings :IBuilding[];
+  readonly pipes :IPipe[];
+  readonly isSequential :boolean;
   isActive :boolean;
   getModel() :Nullable<ManufactureEntity>;
   setModel(model :ManufactureEntity) :void;
@@ -16,7 +18,9 @@ export interface IManufacture {
   registerPipe(pipe :IPipe) :void;
   make() :Promise<void>;
   tick() :Promise<IBuildingRunResult | Error | null>;
-  mining() :Promise<IBuildingRunResult>;
+  mining(minerId ?:bigint) :Promise<IBuildingRunResult>;
+  pipeTick(pipe :IPipe) :Promise<IBuildingRunResult | null>;
+  pipeTickWithBatch(pipe :IPipe, batch :IPiece[]) :Promise<IBuildingRunResult | null>;
 }
 
 export type IManufactureOnReceive = IOnReceive;
@@ -39,6 +43,10 @@ export class Manufacture implements IManufacture {
     this._model = model;
     this._onReceive = onReceive;
     this._repoPieces = repoPieces;
+  }
+
+  public get id() {
+    return this._model?.mid || -1n;
   }
 
   public getModel() {
@@ -115,12 +123,16 @@ export class Manufacture implements IManufacture {
     return result;
   }
 
-  private async pipeTick(pipe :IPipe) :Promise<IBuildingRunResult | null> {
-    const to = pipe.to;
+  public async pipeTick(pipe :IPipe) :Promise<IBuildingRunResult | null> {
     const batch = await pipe.getBatch();
     if (batch.length === 0) {
       return null;
     }
+    return this.pipeTickWithBatch(pipe, batch);
+  }
+
+  public async pipeTickWithBatch(pipe :IPipe, batch :IPiece[]) :Promise<IBuildingRunResult | null> {
+    const to = pipe.to;
     const piecesToStore :PieceEntity[] = [];
     const res = await to.run((pieces) => {
       piecesToStore.push(...this._onReceive(to.getModel(), pieces));
@@ -130,6 +142,7 @@ export class Manufacture implements IManufacture {
     if (res.errorResult?.length) {
       pipe.failBatch(res.errorResult);
     }
+    res.addNewPieces = batch.length;
     return res;
   }
 
@@ -168,5 +181,9 @@ export class Manufacture implements IManufacture {
 
   public get pipes() {
     return [ ...this._pipes ];
+  }
+
+  public get isSequential() :boolean {
+    return this._model?.meta.isSequential || false;
   }
 }

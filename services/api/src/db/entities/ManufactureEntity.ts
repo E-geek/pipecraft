@@ -7,6 +7,7 @@ import {
   OneToMany, PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { IManufactureMeta } from '@pipecraft/types/manufacture';
 import { valueTransformerBigint } from '../helpers/valueTransformerBigint';
 import { UserEntity } from './UserEntity';
 import { PipeEntity } from './PipeEntity';
@@ -60,6 +61,15 @@ export class ManufactureEntity extends BaseEntity {
     eager: true,
   })
   schedulers :SchedulerEntity[];
+
+  @Column({
+    type: 'jsonb',
+    nullable: false,
+    default: {
+      isSequential: true,
+    },
+  })
+  meta :IManufactureMeta;
 
   @CreateDateColumn()
   createdAt :Date;

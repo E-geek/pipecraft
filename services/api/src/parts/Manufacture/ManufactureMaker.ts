@@ -45,6 +45,7 @@ export class ManufactureMaker {
    * This function most required for testing, in real live we are using `loadManufacture`
    * @param args :IBuildManufactureArgs
    * @returns Promise<Manufacture | Error>
+   * @deprecated
    */
   public static async buildManufacture(args :IBuildManufactureArgs) :Promise<Manufacture | Error> {
     const {

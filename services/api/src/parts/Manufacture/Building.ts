@@ -4,13 +4,14 @@ import {
   IBuildingPushFunction,
   IBuildingRunResult,
   IBuildingTypeDescriptor,
-  IPiece,
+  IPiece, Nullable,
 } from '@pipecraft/types';
 import { BaseEntity, Repository } from 'typeorm';
 import { BuildingTypeEntity } from '@/db/entities/BuildingTypeEntity';
 import { BuildingRunConfigEntity } from '@/db/entities/BuildingRunConfigEntity';
 import { BuildingEntity } from '@/db/entities/BuildingEntity';
 import { IManufactureElement } from '@/parts/Manufacture/IManufactureElement';
+import { IManufacture } from '@/parts/Manufacture/Manufacture';
 
 export interface IBuilding extends IManufactureElement {
   type :'building';
@@ -20,8 +21,11 @@ export interface IBuilding extends IManufactureElement {
   readonly typeTitle :string;
   readonly isMiner :boolean;
   readonly isWorks :boolean;
+  readonly buildingTypeId :bigint;
+  readonly isExclusiveBuildingType :boolean;
   getModel() :BuildingEntity;
   run(push :IBuildingPushFunction, input ?:IPiece[]) :Promise<IBuildingRunResult>;
+  manufacture ?:Nullable<IManufacture>;
 }
 
 export class Building implements IBuilding {
@@ -33,6 +37,7 @@ export class Building implements IBuilding {
   public readonly config :BuildingRunConfigEntity;
 
   public type :IBuilding['type'] = 'building';
+  public manufacture :Nullable<IManufacture> = null;
 
   constructor(building :BuildingEntity, descriptor :IBuildingTypeDescriptor) {
     this._model = building;
@@ -102,6 +107,14 @@ export class Building implements IBuilding {
 
   get isWorks() :boolean {
     return this._isWorks;
+  }
+
+  get buildingTypeId() :bigint {
+    return this._type.btid;
+  }
+
+  get isExclusiveBuildingType() :boolean {
+    return this._type.meta.isExclusive || false;
   }
 }
 
