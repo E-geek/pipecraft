@@ -123,7 +123,7 @@ export class ManufactureService {
   public buildManufacture(startBuildingId :bigint) :Promise<Manufacture | Error> {
     return ManufactureMaker.buildManufacture({
       startBuildingId,
-      onReceive: this.onReceive,
+      onStorePieces: this.onReceive,
       repoPieces: this._repoPieces,
       repoBuildings: this._repoBuildings,
       repoPipes: this._repoPipeMemories,
@@ -146,7 +146,7 @@ export class ManufactureService {
   public async loadManufacture(manufactureModel :ManufactureEntity) :Promise<Manufacture | Error> {
     return ManufactureMaker.loadManufacture({
       manufactureModel,
-      onReceive: this.onReceive,
+      onStorePieces: this.onReceive,
       repoPieces: this._repoPieces,
       buildingTypes: this._buildingTypes,
     });

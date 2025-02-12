@@ -4,15 +4,14 @@ import { BuildingEntity } from '@/db/entities/BuildingEntity';
 import { PieceEntity } from '@/db/entities/PieceEntity';
 import { PipeEntity } from '@/db/entities/PipeEntity';
 import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
-import { Manufacture } from '@/parts/Manufacture/Manufacture';
+import { IManufactureOnStorePieces, Manufacture } from '@/parts/Manufacture/Manufacture';
 import { IPipe, Pipe } from '@/parts/Manufacture/Pipe';
 import { Building, IBuilding } from '@/parts/Manufacture/Building';
-import { IOnReceive } from '@/parts/Manufacture/IManufactureElement';
 
 export interface IBuildManufactureArgs {
   startBuildingId :bigint;
   buildingTypes :Map<string, IBuildingTypeDescriptor>;
-  onReceive :IOnReceive;
+  onStorePieces :IManufactureOnStorePieces;
   repoPieces :Repository<PieceEntity>;
   repoBuildings :Repository<BuildingEntity>;
   repoPipes :Repository<PipeEntity>;
@@ -22,7 +21,7 @@ export interface ILoadManufactureArgs {
   repoPieces :Repository<PieceEntity>;
   manufactureModel :ManufactureEntity;
   buildingTypes :Map<string, IBuildingTypeDescriptor>;
-  onReceive :IOnReceive;
+  onStorePieces :IManufactureOnStorePieces;
 }
 
 /**
@@ -51,12 +50,12 @@ export class ManufactureMaker {
     const {
       startBuildingId,
       buildingTypes,
-      onReceive,
+      onStorePieces,
       repoPieces,
       repoBuildings,
       repoPipes,
     } = args;
-    const manufacture = new Manufacture(onReceive, repoPieces);
+    const manufacture = new Manufacture(onStorePieces, repoPieces);
     const startBuildingModel = await repoBuildings.findOne({ where: { bid: startBuildingId }});
     const startBuilding = this.makeBuildingByModel(startBuildingModel, buildingTypes);
     if (startBuilding instanceof Error) {
@@ -131,9 +130,9 @@ export class ManufactureMaker {
       manufactureModel,
       buildingTypes,
       repoPieces,
-      onReceive,
+      onStorePieces,
     } = args;
-    const manufacture = new Manufacture(onReceive, repoPieces, manufactureModel);
+    const manufacture = new Manufacture(onStorePieces, repoPieces, manufactureModel);
     const buildingModels = manufactureModel.buildings;
     const pipeModels = manufactureModel.pipes;
     const buildingMap = new Map<bigint, IBuilding>();

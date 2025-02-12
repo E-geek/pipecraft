@@ -25,6 +25,7 @@ export type IFacilityPushArgs = IFacilityPushArgsMiner | IFacilityPushArgsFactor
 export interface IFacilityResult {
   building :IBuilding;
   spentTime :number; // how much time has spent
+  shouldContinue :boolean; // task is not finished, probably. Need continue to run this building and pipe
   pipe ?:IPipe; // only when pipe was in input
 }
 
@@ -49,7 +50,7 @@ export class Facility implements IFacility {
   }
 
   public get capacity() :number {
-    return this._capacity;
+    return this._capacity || Number.MAX_SAFE_INTEGER; // if zero, then infinity
   }
 
   public get size() :number {
@@ -116,18 +117,21 @@ export class Facility implements IFacility {
     }
     await Promise.resolve(); // detach from current microtask loop
     const start = Date.now();
+    let shouldContinue = false;
     if (building.isMiner) {
       await building.manufacture.mining(building.id);
     } else if (batch) {
-      await building.manufacture.pipeTickWithBatch(pipe, batch);
+      const res = await building.manufacture.pipeTickWithBatch(pipe, batch);
+      shouldContinue = res !== null;
     } else {
-      await building.manufacture.pipeTick(pipe!);
+      const res = await building.manufacture.pipeTick(pipe!);
+      shouldContinue = res !== null;
     }
     const spentTime = Date.now() - start;
     this._workers.delete(building.id);
     this.removeBuildingIdFromListOf(building.id, building.buildingTypeId, this._buildingTypes);
     this.removeBuildingIdFromListOf(building.id, building.manufacture.id, this._manufactures);
-    return { building, pipe, spentTime };
+    return { building, pipe, spentTime, shouldContinue };
   }
 
   public hasBuilding(bid :bigint) :boolean {

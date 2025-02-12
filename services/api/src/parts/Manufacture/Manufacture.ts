@@ -1,10 +1,10 @@
-import { IBuildingRunResult, IPiece, Nullable } from '@pipecraft/types';
+import { IBuildingPushFunction, IBuildingRunResult, IPiece, IPieceMeta, Nullable, Promisable } from '@pipecraft/types';
 import { Repository } from 'typeorm';
 import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
 import { PieceEntity } from '@/db/entities/PieceEntity';
+import { BuildingEntity } from '@/db/entities/BuildingEntity';
 import { IBuilding } from '@/parts/Manufacture/Building';
 import { IPipe } from '@/parts/Manufacture/Pipe';
-import { IOnReceive } from '@/parts/Manufacture/IManufactureElement';
 
 export interface IManufacture {
   readonly id :bigint;
@@ -13,36 +13,44 @@ export interface IManufacture {
   readonly isSequential :boolean;
   readonly nice :number;
   isActive :boolean;
+
   getModel() :Nullable<ManufactureEntity>;
+
   setModel(model :ManufactureEntity) :void;
+
   registerBuilding(building :IBuilding) :void;
+
   registerPipe(pipe :IPipe) :void;
+
   make() :Promise<void>;
-  tick() :Promise<IBuildingRunResult | Error | null>;
+
   mining(minerId ?:bigint) :Promise<IBuildingRunResult>;
+
   pipeTick(pipe :IPipe) :Promise<IBuildingRunResult | null>;
+
   pipeTickWithBatch(pipe :IPipe, batch :IPiece[]) :Promise<IBuildingRunResult | null>;
+
+  getPipesFrom(building :IBuilding) :IPipe[];
 }
 
-export type IManufactureOnReceive = IOnReceive;
+export type IManufactureOnStorePieces = (building :IBuilding) =>Promisable<void>;
 
 export class Manufacture implements IManufacture {
   private _pipes :Set<IPipe>;
   private _buildings :Set<IBuilding>;
-  private _cursor = 0;
   private _model :Nullable<ManufactureEntity>;
   private _loop :(IPipe)[];
-  private _onReceive :IManufactureOnReceive;
+  private _onStorePieces :IManufactureOnStorePieces;
   private _repoPieces :Repository<PieceEntity>;
 
   public isActive = false;
 
-  constructor(onReceive :IManufactureOnReceive, repoPieces :Repository<PieceEntity>, model :Nullable<ManufactureEntity> = null) {
+  constructor(onStorePieces :IManufactureOnStorePieces, repoPieces :Repository<PieceEntity>, model :Nullable<ManufactureEntity> = null) {
     this._pipes = new Set();
     this._buildings = new Set();
     this._loop = [];
     this._model = model;
-    this._onReceive = onReceive;
+    this._onStorePieces = onStorePieces;
     this._repoPieces = repoPieces;
   }
 
@@ -104,15 +112,12 @@ export class Manufacture implements IManufacture {
       okResult: [],
       errorLogs: [],
       errorResult: [],
-      addNewPieces: 0,
     };
     for (const miner of miners) {
-      const piecesToStore :PieceEntity[] = [];
-      const out = await miner.run((pieces) => {
-        piecesToStore.push(...this._onReceive(miner.getModel(), pieces));
-      });
-      await this._repoPieces.save(piecesToStore);
-      result.addNewPieces += out.addNewPieces;
+      const minerEntity = miner.getModel();
+      const promises :Promise<void>[] = [];
+      const out = await miner.run(this._onPush(promises, minerEntity, miner));
+      await Promise.all(promises);
       result.okResult.push(...out.okResult);
       if (out.errorLogs) {
         result.errorLogs.push(...out.errorLogs);
@@ -122,6 +127,25 @@ export class Manufacture implements IManufacture {
       }
     }
     return result;
+  }
+
+  private _onPush(promises :Promise<void>[], buildingEntity :BuildingEntity, building :IBuilding) :IBuildingPushFunction {
+    return (pieces :IPieceMeta[]) => {
+      if (!pieces.length) {
+        return;
+      }
+      const piecesToStore :PieceEntity[] = pieces.map(piece => new PieceEntity({
+        from: buildingEntity,
+        data: piece,
+      }));
+      const awaiter = this
+        ._repoPieces
+        .save(piecesToStore)
+        .then(() => {
+          this._onStorePieces(building);
+        });
+      promises.push(awaiter);
+    };
   }
 
   public async pipeTick(pipe :IPipe) :Promise<IBuildingRunResult | null> {
@@ -135,45 +159,18 @@ export class Manufacture implements IManufacture {
   public async pipeTickWithBatch(pipe :IPipe, batch :IPiece[]) :Promise<IBuildingRunResult | null> {
     const to = pipe.to;
     const piecesToStore :PieceEntity[] = [];
-    const res = await to.run((pieces) => {
-      piecesToStore.push(...this._onReceive(to.getModel(), pieces));
-    }, batch);
+    const promises :Promise<void>[] = [];
+    const buildingEntity = to.getModel();
+    const res = await to.run(
+      this._onPush(promises, buildingEntity, to),
+      batch,
+    );
     await this._repoPieces.save(piecesToStore);
     pipe.releaseBatch(res.okResult);
     if (res.errorResult?.length) {
       pipe.failBatch(res.errorResult);
     }
-    res.addNewPieces = batch.length;
     return res;
-  }
-
-  private _nullCursor = -1;
-
-  public async tick() :Promise<IBuildingRunResult | Error | null> {
-    const cursor = this._cursor++;
-    if (this._nullCursor === cursor) {
-      this._nullCursor = -1;
-      return null;
-    }
-    if (this._cursor >= this._loop.length) {
-      this._cursor = 0;
-    }
-    const element = this._loop[cursor];
-    if (!element) {
-      return new Error('No elements in loop, maybe `make` are skipped?');
-    }
-    if (element.type === 'pipe') {
-      const result = await this.pipeTick(element);
-      if (result === null) {
-        if (this._nullCursor === -1) {
-          this._nullCursor = cursor;
-        }
-        return this.tick();
-      }
-      this._nullCursor = -1;
-      return result;
-    }
-    return { okResult: [], addNewPieces: 0 };
   }
 
   public get buildings() {
@@ -190,5 +187,10 @@ export class Manufacture implements IManufacture {
 
   public get nice() :number {
     return this._model?.nice || 0;
+  }
+
+  public getPipesFrom(building :IBuilding) :IPipe[] {
+    // can be optimised
+    return [ ...this._pipes ].filter(pipe => pipe.from === building);
   }
 }

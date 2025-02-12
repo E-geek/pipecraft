@@ -37,7 +37,6 @@ export interface IBuildingRunResult {
   okResult :IPieceId[];
   errorResult ?:IPieceId[];
   errorLogs ?:string[];
-  addNewPieces :number;
 }
 
 export type IBuildingGear<InputType = IPiece, OutputType = IPieceMeta> = (args :IBuildingRunArgs<InputType, OutputType>) =>Promise<Omit<IBuildingRunResult, 'addNewPieces'>>;

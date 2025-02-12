@@ -15,14 +15,9 @@ import { Hub } from '@/parts/Hub/Hub';
 import { MakeManufacture } from '@/test/MakeManufacture';
 
 describe('Hub', () => {
-  let service :ManufactureService;
   let pieceRepo :Repository<PieceEntity>;
   let testPrinterRepo :Repository<TestPrinter>;
   let manufactureRepo :Repository<ManufactureEntity>;
-  const workingDirectory :string | null = null;
-  let pipeRepo :Repository<PipeEntity>;
-  let buildingRepo :Repository<BuildingEntity>;
-  let buildingRunConfigRepo :Repository<BuildingRunConfigEntity>;
 
   type IPieceMetaLocal = IPieceMeta & { data :number };
   type IPieceLocal = IPiece<IPieceMetaLocal>;
@@ -44,20 +39,16 @@ describe('Hub', () => {
       ],
     }).compile();
 
-    service = module.get<ManufactureService>(ManufactureService);
     testPrinterRepo = module.get<Repository<TestPrinter>>(getRepositoryToken(TestPrinter));
     manufactureRepo = module.get<Repository<ManufactureEntity>>(getRepositoryToken(ManufactureEntity));
     pieceRepo = module.get<Repository<PieceEntity>>(getRepositoryToken(PieceEntity));
-    pipeRepo = module.get<Repository<PipeEntity>>(getRepositoryToken(PipeEntity));
-    buildingRepo = module.get<Repository<BuildingEntity>>(getRepositoryToken(BuildingEntity));
-    buildingRunConfigRepo = module.get<Repository<BuildingRunConfigEntity>>(getRepositoryToken(BuildingRunConfigEntity));
     await manufactureRepo.delete({});
     await testPrinterRepo.delete({});
     await pieceRepo.delete({});
   });
 
   it('Complex bootstrap test', async () => {
-    const manufacture = await MakeManufacture.make([
+    const manufactureEntity = await MakeManufacture.make([
       {
         miner: 'numberMiner',
         config: {
@@ -77,15 +68,15 @@ describe('Hub', () => {
         batch: '100%',
       },
     ]);
-    expect(manufacture).toBeInstanceOf(ManufactureEntity);
-    expect(manufacture.buildings).toHaveLength(3);
-    expect(manufacture.pipes).toHaveLength(2);
-    expect(manufacture.buildings[0].manufacture).toBe(manufacture);
-    expect(manufacture.buildings[1].manufacture).toBe(manufacture);
-    expect(manufacture.buildings[2].manufacture).toBe(manufacture);
-    expect(manufacture.pipes[0].manufacture).toBe(manufacture);
-    expect(manufacture.pipes[1].manufacture).toBe(manufacture);
-    expect(manufacture.title).toContain('Manufacture #');
+    expect(manufactureEntity).toBeInstanceOf(ManufactureEntity);
+    expect(manufactureEntity.buildings).toHaveLength(3);
+    expect(manufactureEntity.pipes).toHaveLength(2);
+    expect(manufactureEntity.buildings[0].manufacture).toBe(manufactureEntity);
+    expect(manufactureEntity.buildings[1].manufacture).toBe(manufactureEntity);
+    expect(manufactureEntity.buildings[2].manufacture).toBe(manufactureEntity);
+    expect(manufactureEntity.pipes[0].manufacture).toBe(manufactureEntity);
+    expect(manufactureEntity.pipes[1].manufacture).toBe(manufactureEntity);
+    expect(manufactureEntity.title).toContain('Manufacture #');
     const minerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
       gear: async (args) => {
         const startFrom :number = (args.runConfig?.startFrom as null | number) ?? 0;
@@ -127,9 +118,8 @@ describe('Hub', () => {
     });
     expect(hub).toBeInstanceOf(Hub);
     await hub.loadAllManufactures();
-    hub.runMiner(manufacture.buildings[0]);
-    await hub.awaitForLoop('mining');
-    await hub.awaitForLoop('main');
+    const manufacture = hub.allManufactures.get(manufactureEntity.mid)!;
+    hub.addBuildingToFacility(manufacture.buildings[0]);
     expect(printerChunks).toHaveLength(3);
     expect(printerChunks[0]).toEqual([ 21, 22, 23, 24 ]);
     expect(printerChunks[1]).toEqual([ 25, 26, 27, 28 ]);
