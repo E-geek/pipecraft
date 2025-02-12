@@ -1,7 +1,8 @@
-import { IPiece } from '@pipecraft/types';
+import { IPiece, Writable } from '@pipecraft/types';
 import { IQueueItem, QueueArea } from './QueueArea';
 import { IBuilding } from '@/parts/Manufacture/Building';
 import { IPipe } from '@/parts/Manufacture/Pipe';
+import { IManufacture } from '@/parts/Manufacture/Manufacture';
 
 describe('QueueArea', () => {
   let queueArea :QueueArea;
@@ -68,7 +69,7 @@ describe('QueueArea', () => {
 
   it('skips items with exclusive building type IDs when popping', () => {
     const item1 :IQueueItem = { building, pipe, batch, nice: 0, vRuntime: 10 };
-    const item2 :IQueueItem = { ...item1, building: { ...building, id: BigInt(2) }, vRuntime: 5 };
+    const item2 :IQueueItem = { ...item1, building: { ...building, id: BigInt(2), buildingTypeId: 2n }, vRuntime: 5 };
     queueArea.push(item1);
     queueArea.push(item2);
     expect(queueArea.pop([ BigInt(1) ], [])!.vRuntime).toBe(5);
@@ -76,10 +77,17 @@ describe('QueueArea', () => {
 
   it('skips items with sequential manufacture IDs when popping', () => {
     const item1 :IQueueItem = { building, pipe, batch, nice: 0, vRuntime: 10 };
-    const item2 :IQueueItem = { ...item1, building: { ...building, id: BigInt(2) }, vRuntime: 5 };
+    const item2 :IQueueItem = {
+      building: { ...building, id: 2n, manufacture: { ...building.manufacture, id: 2n } as IManufacture },
+      pipe,
+      batch,
+      nice: 0,
+      vRuntime: 5,
+    };
+    (item1.building.manufacture as Writable<IManufacture>).isSequential = true;
     queueArea.push(item1);
     queueArea.push(item2);
-    expect(queueArea.pop([], [ BigInt(1) ])!.vRuntime).toBe(5);
+    expect(queueArea.pop([], [ 1n ])!.vRuntime).toBe(5);
   });
 
   it('calculate new vRuntime', () => {
@@ -89,5 +97,12 @@ describe('QueueArea', () => {
     expect(vRuntime1).toBe(10240 + 5);
     const vRuntime2 = QueueArea.getNewVRuntime(10, item2);
     expect(vRuntime2).toBe(8192 + 10);
+  });
+
+  it('check has', () => {
+    const item1 :IQueueItem = { building, pipe, batch, nice: 0, vRuntime: 5 };
+    queueArea.push(item1);
+    expect(queueArea.has(BigInt(1))).toBe(true);
+    expect(queueArea.has(BigInt(2))).toBe(false);
   });
 });

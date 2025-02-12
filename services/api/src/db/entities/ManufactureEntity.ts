@@ -39,6 +39,14 @@ export class ManufactureEntity extends BaseEntity {
   owner :UserEntity | null;
 
   @Column({
+    type: 'smallint',
+    nullable: false,
+    default: 10,
+    comment: 'Priority of the process, less is high like in linux, from -20 to 20',
+  })
+  nice :number;
+
+  @Column({
     type: 'varchar',
     length: 128,
     nullable: false,

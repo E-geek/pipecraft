@@ -79,14 +79,6 @@ export class PipeEntity extends BaseEntity {
   })
   ordering :'direct'|'reverse';
 
-  @Column({
-    type: 'smallint',
-    nullable: false,
-    default: 10,
-    comment: 'Priority of the process, less is high like in linux, from -20 to 20',
-  })
-  priority :number;
-
   @ManyToOne(() => ManufactureEntity, {
     nullable: true,
     onDelete: 'SET NULL',

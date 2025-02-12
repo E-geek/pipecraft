@@ -82,8 +82,12 @@ export class Facility implements IFacility {
     const workerId = building.id;
     const worker = this._work(args);
     this._workers.set(workerId, worker);
-    this.addBuildingIdToListOf(building.id, building.buildingTypeId, this._buildingTypes);
-    this.addBuildingIdToListOf(building.id, building.manufacture.id, this._manufactures);
+    if (building.isExclusiveBuildingType) {
+      this.addBuildingIdToListOf(building.id, building.buildingTypeId, this._buildingTypes);
+    }
+    if (building.manufacture.isSequential) {
+      this.addBuildingIdToListOf(building.id, building.manufacture.id, this._manufactures);
+    }
     return worker;
   }
 
@@ -126,11 +130,22 @@ export class Facility implements IFacility {
     return { building, pipe, spentTime };
   }
 
+  public hasBuilding(bid :bigint) :boolean {
+    return this._workers.has(bid);
+  }
+
   public hasBuildingType(btid :bigint) :boolean {
     return this._buildingTypes.has(btid);
   }
 
   public hasManufacture(mid :bigint) :boolean {
     return this._manufactures.has(mid);
+  }
+
+  public getExclusives() :[bigint[], bigint[]] {
+    return [
+      [ ...this._buildingTypes.keys() ],
+      [ ...this._manufactures.keys() ],
+    ];
   }
 }

@@ -1,11 +1,11 @@
-import { IPiece } from '@pipecraft/types';
+import { IPiece, Nullable } from '@pipecraft/types';
 import { IBuilding } from '@/parts/Manufacture/Building';
 import { IPipe } from '@/parts/Manufacture/Pipe';
 
 export interface IQueueItem {
   building :IBuilding;
-  pipe :IPipe;
-  batch :IPiece[];
+  pipe :Nullable<IPipe>;
+  batch :Nullable<IPiece[]>;
   nice :number;
   vRuntime :number; // should be -1 for new items
 }
@@ -14,6 +14,7 @@ export interface IQueueArea {
   readonly isEmpty :boolean;
   push(item :IQueueItem) :IQueueArea;
   pop(exclusiveIds :bigint[], seqManufactureIds :bigint[]) :IQueueItem|null;
+  has(bid :bigint) :boolean;
 }
 
 export class QueueArea {
@@ -45,7 +46,7 @@ export class QueueArea {
         pushedItem.vRuntime = minVRuntime;
       }
     }
-    this._heap.push(item);
+    this._heap.push(pushedItem);
     return this;
   }
 
@@ -55,10 +56,10 @@ export class QueueArea {
     }
     const exclusiveIdsSet = new Set(exclusiveIds);
     const seqManufactureIdsSet = new Set(seqManufactureIds);
-    let minVRuntime = this._heap[0].vRuntime;
+    let minVRuntime = Number.MAX_SAFE_INTEGER;
     let minIndex = -1;
     // should be optimised
-    for (let i = 1; i < this._heap.length; i++) {
+    for (let i = 0; i < this._heap.length; i++) {
       const item = this._heap[i];
       if (exclusiveIdsSet.has(item.building.buildingTypeId)) {
         continue;
@@ -77,6 +78,10 @@ export class QueueArea {
     const item = this._heap[minIndex];
     this._heap.splice(minIndex, 1);
     return item;
+  }
+
+  public has(bid :bigint) {
+    return this._heap.some(item => item.building.id === bid);
   }
 
   public static getNewVRuntime(cpuTime :number, item :IQueueItem) {

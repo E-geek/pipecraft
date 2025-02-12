@@ -11,6 +11,7 @@ export interface IManufacture {
   readonly buildings :IBuilding[];
   readonly pipes :IPipe[];
   readonly isSequential :boolean;
+  readonly nice :number;
   isActive :boolean;
   getModel() :Nullable<ManufactureEntity>;
   setModel(model :ManufactureEntity) :void;
@@ -185,5 +186,9 @@ export class Manufacture implements IManufacture {
 
   public get isSequential() :boolean {
     return this._model?.meta.isSequential || false;
+  }
+
+  public get nice() :number {
+    return this._model?.nice || 0;
   }
 }

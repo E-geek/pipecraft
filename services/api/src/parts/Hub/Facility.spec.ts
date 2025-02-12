@@ -103,4 +103,30 @@ describe('Facility', () => {
     expect(result.spentTime).toBeGreaterThanOrEqual(10);
     expect(result.spentTime).toBeLessThan(100);
   });
+
+  it('test getExclusives', () => {
+    const facility = new Facility(8);
+    const building1 :IBuilding = { ...building, id: 4n, isExclusiveBuildingType: true };
+    const building2 :IBuilding = { ...building, id: 2n, buildingTypeId: 5n, isExclusiveBuildingType: true };
+    const building3 :IBuilding = { ...building, id: 3n, manufacture: { ...(building.manufacture as IManufacture), id: 6n, isSequential: true }};
+    facility.push({ building });
+    facility.push({ building: building1 });
+    facility.push({ building: building2 });
+    facility.push({ building: building3 });
+    const exclusives = facility.getExclusives();
+    expect(exclusives).toHaveLength(2);
+    expect(exclusives).toMatchObject([[ 1n, 5n ], [ 6n ]]);
+  });
+
+  it('check hasBuilding', () => {
+    const facility = new Facility(8);
+    const building1 :IBuilding = { ...building, id: 4n, isExclusiveBuildingType: true };
+    const building2 :IBuilding = { ...building, id: 2n, buildingTypeId: 5n, isExclusiveBuildingType: true };
+    facility.push({ building });
+    facility.push({ building: building1 });
+    facility.push({ building: building2 });
+    expect(facility.hasBuilding(1n)).toBe(true);
+    expect(facility.hasBuilding(2n)).toBe(true);
+    expect(facility.hasBuilding(3n)).toBe(false);
+  });
 });

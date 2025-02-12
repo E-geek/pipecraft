@@ -7,6 +7,10 @@ import { ManufactureMaker } from '@/parts/Manufacture/ManufactureMaker';
 import { Manufacture } from '@/parts/Manufacture/Manufacture';
 import { Loop } from '@/parts/Hub/Loop';
 import { IPromise, promise, wait } from '@/parts/async';
+import { IBuilding } from '@/parts/Manufacture/Building';
+import { IPipe } from '@/parts/Manufacture/Pipe';
+import { Facility, IFacilityPushArgs } from '@/parts/Hub/Facility';
+import { IQueueItem, QueueArea } from '@/parts/Hub/QueueArea';
 
 export type ILoopName = 'main' | 'mining';
 
@@ -64,6 +68,8 @@ export interface IHubArgs {
 }
 
 export class Hub implements IHub {
+  private _queueArea :QueueArea;
+  private _facility :Facility;
   private _manufactures :Map<bigint, Manufacture>;
   private _repoManufacture :Repository<ManufactureEntity>;
   private _repoPieces :Repository<PieceEntity>;
@@ -96,6 +102,8 @@ export class Hub implements IHub {
       main: null,
       mining: null,
     };
+    this._facility = new Facility(32);
+    this._queueArea = new QueueArea();
   }
 
   private _onManufactureReceive = (manufactureEntity :ManufactureEntity) :void => {
@@ -256,5 +264,58 @@ export class Hub implements IHub {
     }
     (loop as Loop<bigint>).remove(minerId);
     return loop.isEmpty;
+  }
+
+  public async addBuildingToFacility(building :IBuilding, pipe ?:IPipe) {
+    if (!building.manufacture) {
+      throw new Error('Building has no manufacture');
+    }
+    if (!building.isMiner && !pipe) {
+      throw new Error('pipe is required for non-miner building');
+    }
+    if (this._facility.hasBuilding(building.id)) {
+      // do nothing: building already is works
+      return;
+    }
+    if (this._queueArea.has(building.id)) {
+      // do nothing: building is in queue
+      return;
+    }
+    // we should process building
+    // by reasons the building not in queue and not in facility, make new from scratch
+    const item :IQueueItem & IFacilityPushArgs = {
+      building,
+      pipe: pipe,
+      batch: null,
+      nice: building.nice,
+      vRuntime: -1,
+    };
+    this._queueArea.push(item);
+  }
+
+  private _pushItemToFacility(item :IQueueItem) {
+    this
+      ._facility
+      .push(item)
+      .then((result) => {
+        const { spentTime } = result;
+        item.vRuntime = QueueArea.getNewVRuntime(spentTime, item);
+        this._queueArea.push(item);
+      })
+    ;
+  }
+
+  private _runFacilityFromQueue() {
+    for (let i = this._facility.size; i < this._facility.capacity; i++) {
+      const exclusiveIds = this._facility.getExclusives();
+      if (this._queueArea.isEmpty) {
+        break;
+      }
+      const item = this._queueArea.pop(...exclusiveIds);
+      if (!item) {
+        break;
+      }
+      this._pushItemToFacility(item);
+    }
   }
 }

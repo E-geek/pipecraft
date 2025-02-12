@@ -43,6 +43,14 @@ export class BuildingEntity extends BaseEntity {
   })
   batchSize :string;
 
+  @Column({
+    type: 'smallint',
+    nullable: true,
+    default: null,
+    comment: 'Priority of the process, less is high like in linux, from -20 to 20',
+  })
+  nice :number;
+
   @ManyToOne(() => ManufactureEntity, manufacture => manufacture.buildings, {
     nullable: true,
     onDelete: 'SET NULL',

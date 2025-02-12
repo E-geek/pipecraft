@@ -23,6 +23,7 @@ export interface IBuilding extends IManufactureElement {
   readonly isWorks :boolean;
   readonly buildingTypeId :bigint;
   readonly isExclusiveBuildingType :boolean;
+  readonly nice :number;
   getModel() :BuildingEntity;
   run(push :IBuildingPushFunction, input ?:IPiece[]) :Promise<IBuildingRunResult>;
   manufacture ?:Nullable<IManufacture>;
@@ -115,6 +116,10 @@ export class Building implements IBuilding {
 
   get isExclusiveBuildingType() :boolean {
     return this._type.meta.isExclusive || false;
+  }
+
+  get nice() :number {
+    return this._model.nice ?? this.manufacture?.nice ?? 0;
   }
 }
 
