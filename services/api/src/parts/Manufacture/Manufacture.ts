@@ -5,7 +5,7 @@ import { PieceEntity } from '@/db/entities/PieceEntity';
 import { BuildingEntity } from '@/db/entities/BuildingEntity';
 import { IBuilding } from '@/parts/Manufacture/Building';
 import { IPipe } from '@/parts/Manufacture/Pipe';
-import { IPromise, promise, wait } from '@/parts/async';
+import { ThrottleStorePieces } from '@/parts/ThrottleStorePieces/ThrottleStorePieces';
 
 export interface IManufacture {
   readonly id :bigint;
@@ -45,9 +45,7 @@ export class Manufacture implements IManufacture {
   private _repoPieces :Repository<PieceEntity>;
 
   public isActive = false;
-  private _pieceTimer :number = -1;
-  private _piecesToStore :PieceEntity[];
-  private _waitersToStore :IPromise<void>[];
+  private _throttleStorePieces :ThrottleStorePieces;
 
   constructor(onStorePieces :IManufactureOnStorePieces, repoPieces :Repository<PieceEntity>, model :Nullable<ManufactureEntity> = null) {
     this._pipes = new Set();
@@ -56,8 +54,7 @@ export class Manufacture implements IManufacture {
     this._model = model;
     this._onStorePieces = onStorePieces;
     this._repoPieces = repoPieces;
-    this._piecesToStore = [];
-    this._waitersToStore = [];
+    this._throttleStorePieces = new ThrottleStorePieces(repoPieces);
   }
 
   public get id() {
@@ -142,37 +139,17 @@ export class Manufacture implements IManufacture {
       if (!pieces.length) {
         return;
       }
-      this._piecesToStore.push(...pieces.map(piece => new PieceEntity({
+      const pieceEntities = pieces.map(piece => new PieceEntity({
         from: buildingEntity,
         data: piece,
-      })));
-
-      const awaiter = promise<void>();
-      this._waitersToStore.push(awaiter);
-      promises.push(awaiter.promise);
-      clearTimeout(this._pieceTimer);
-      const storeToDB = () => {
-        const piecesToStore = this._piecesToStore.slice(0);
-        const waiters = this._waitersToStore.slice(0);
-        this._piecesToStore.length = 0;
-        this._waitersToStore.length = 0;
-        this
-          ._repoPieces
-          .save(piecesToStore)
-          .then(() => {
-            this._onStorePieces(building);
-          })
-          .then(() => {
-            for (let i = 0; i < waiters.length; i++){
-              waiters[i].done();
-            }
-          });
-      };
-      if (this._piecesToStore.length < 1000) {
-        this._pieceTimer = wait(0, storeToDB);
-      } else {
-        storeToDB();
-      }
+      }));
+      this
+        ._throttleStorePieces
+        .store(pieceEntities, promises)
+        .then(() => {
+          this._onStorePieces(building);
+        })
+      ;
     };
   }
 
