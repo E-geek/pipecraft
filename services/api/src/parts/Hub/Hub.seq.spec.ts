@@ -128,4 +128,84 @@ describe('Hub', () => {
     expect(printerChunks[1]).toEqual([ 25, 26, 27, 28 ]);
     expect(printerChunks[2]).toEqual([ 29, 30 ]);
   });
+
+  it('Test for sequence manufacture', async () => {
+    const manufactureEntity = await MakeManufacture.make([
+      {
+        miner: 'numberMiner',
+        config: {
+          startFrom: 10,
+          mineByRound: 10,
+        },
+      },
+      {
+        factory: 'incrementBy',
+        batch: '4',
+        config: {
+          increment: 11,
+        },
+      },
+      {
+        factory: 'incrementBy',
+        batch: '1',
+        config: {
+          increment: 5,
+        },
+      },
+      {
+        printer: 'printAll',
+        batch: '100%',
+      },
+    ]);
+    const minerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
+      gear: async (args) => {
+        const startFrom :number = (args.runConfig?.startFrom as null | number) ?? 0;
+        const mineByRound :number = (args.runConfig?.mineByRound as null | number) ?? 1;
+        for (let i = startFrom; i < startFrom + mineByRound; i++) {
+          args.push([{ data: i }] );
+        }
+        return { okResult: []};
+      },
+    };
+    const countRunDescriptor :number[] = [];
+    const factoryDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
+      gear: async (args) => {
+        const input = args.input;
+        const output = [] as IPieceMetaLocal[];
+        const increment = (args.runConfig?.increment as null | number) ?? 0;
+        countRunDescriptor.push(increment);
+        for (const { data: piece } of input) {
+          output.push({ data: piece.data + increment });
+        }
+        args.push(output);
+        await wait(10);
+        return { okResult: input.map(p => p.pid) };
+      },
+    };
+    const printerChunks = [] as number[][];
+    const printerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
+      gear: async (args) => {
+        const input = args.input;
+        printerChunks.push(input.map(p => p.data.data));
+        return { okResult: input.map(p => p.pid) };
+      },
+    };
+    const hub = new Hub({
+      repoManufacture: manufactureRepo,
+      repoPieces: pieceRepo,
+      buildingTypes: new Map([
+        [ 'numberMiner', minerDescriptor ],
+        [ 'incrementBy', factoryDescriptor ],
+        [ 'printAll', printerDescriptor ],
+      ]),
+    });
+    expect(hub).toBeInstanceOf(Hub);
+    await hub.loadAllManufactures();
+    const manufacture = hub.allManufactures.get(manufactureEntity.mid)!;
+    hub.addBuildingToFacility(manufacture.buildings[0]);
+    await hub.waitForFinish(manufactureEntity.mid);
+    expect(printerChunks).toHaveLength(1);
+    expect(countRunDescriptor).toMatchObject([ 11, 11, 11, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]);
+    expect(printerChunks[0]).toEqual([ 26, 27, 28, 29, 30, 31, 32, 33, 34, 35 ]);
+  });
 });
