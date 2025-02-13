@@ -1,5 +1,5 @@
 import { IPiece, Writable } from '@pipecraft/types';
-import { IBuilding } from '@/parts/Manufacture/Building';
+import { IBuilding, IBuildingState } from '@/parts/Manufacture/Building';
 import { IPipe } from '@/parts/Manufacture/Pipe';
 import { IManufacture } from '@/parts/Manufacture/Manufacture';
 import { Facility } from './Facility';
@@ -13,6 +13,7 @@ describe('Facility', () => {
   beforeEach(() => {
     facility = new Facility(2);
     building = {
+      state: 'idle',
       id: BigInt(1),
       buildingTypeId: BigInt(1),
       manufacture: {
@@ -24,6 +25,9 @@ describe('Facility', () => {
       } as unknown as IManufacture,
       isExclusiveBuildingType: false,
       isMiner: false,
+      setState(state :IBuildingState) {
+        this.state = state;
+      },
     } as IBuilding;
     pipe = {} as IPipe;
     batch = [ {} as IPiece ];

@@ -117,6 +117,7 @@ export class Hub implements IHub {
       .push(item)
       .then((result) => {
         const { spentTime } = result;
+        item.building.setState('idle');
         item.vRuntime = QueueArea.getNewVRuntime(spentTime, item);
         if (result.shouldContinue) {
           this._queueArea.push(item);

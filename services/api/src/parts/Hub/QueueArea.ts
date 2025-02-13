@@ -46,6 +46,7 @@ export class QueueArea {
         pushedItem.vRuntime = minVRuntime;
       }
     }
+    pushedItem.building.setState('wait');
     this._heap.push(pushedItem);
     return this;
   }
@@ -77,6 +78,7 @@ export class QueueArea {
     }
     const item = this._heap[minIndex];
     this._heap.splice(minIndex, 1);
+    item.building.setState('idle');
     return item;
   }
 

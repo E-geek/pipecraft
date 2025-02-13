@@ -80,6 +80,7 @@ export class Facility implements IFacility {
     if (building.manufacture.isSequential && this.hasManufacture(building.manufacture.id)) {
       throw new Error('Building is already working from the manufacture');
     }
+    building.setState('work');
     const workerId = building.id;
     const worker = this._work(args);
     this._workers.set(workerId, worker);

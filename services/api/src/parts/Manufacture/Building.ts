@@ -13,6 +13,8 @@ import { BuildingEntity } from '@/db/entities/BuildingEntity';
 import { IManufactureElement } from '@/parts/Manufacture/IManufactureElement';
 import { IManufacture } from '@/parts/Manufacture/Manufacture';
 
+export type IBuildingState = 'idle' | 'wait' | 'work';
+
 export interface IBuilding extends IManufactureElement {
   type :'building';
   readonly id :bigint;
@@ -24,8 +26,10 @@ export interface IBuilding extends IManufactureElement {
   readonly buildingTypeId :bigint;
   readonly isExclusiveBuildingType :boolean;
   readonly nice :number;
+  readonly state :IBuildingState;
   getModel() :BuildingEntity;
   run(push :IBuildingPushFunction, input ?:IPiece[]) :Promise<IBuildingRunResult>;
+  setState(state :IBuildingState) :void;
   manufacture ?:Nullable<IManufacture>;
 }
 
@@ -38,6 +42,7 @@ export class Building implements IBuilding {
   public readonly config :BuildingRunConfigEntity;
 
   public type :IBuilding['type'] = 'building';
+  public _state :IBuildingState = 'idle';
   public manufacture :Nullable<IManufacture> = null;
 
   constructor(building :BuildingEntity, descriptor :IBuildingTypeDescriptor) {
@@ -119,6 +124,14 @@ export class Building implements IBuilding {
 
   get nice() :number {
     return this._model.nice ?? this.manufacture?.nice ?? 0;
+  }
+
+  get state() :IBuildingState {
+    return this._state;
+  }
+
+  public setState(state :IBuildingState) { // сеттер так отличается, чтобы быть видимым экшеном
+    this._state = state;
   }
 }
 

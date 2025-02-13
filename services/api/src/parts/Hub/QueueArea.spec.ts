@@ -1,6 +1,6 @@
 import { IPiece, Writable } from '@pipecraft/types';
 import { IQueueItem, QueueArea } from './QueueArea';
-import { IBuilding } from '@/parts/Manufacture/Building';
+import { IBuilding, IBuildingState } from '@/parts/Manufacture/Building';
 import { IPipe } from '@/parts/Manufacture/Pipe';
 import { IManufacture } from '@/parts/Manufacture/Manufacture';
 
@@ -13,6 +13,7 @@ describe('QueueArea', () => {
   beforeEach(() => {
     queueArea = new QueueArea();
     building = {
+      state: 'idle',
       id: BigInt(1),
       buildingTypeId: BigInt(1),
       manufacture: {
@@ -21,6 +22,9 @@ describe('QueueArea', () => {
       } as any,
       isExclusiveBuildingType: false,
       isMiner: false,
+      setState(state :IBuildingState) {
+        this.state = state;
+      },
     } as IBuilding;
     pipe = {} as IPipe;
     batch = [ {} as IPiece ];
