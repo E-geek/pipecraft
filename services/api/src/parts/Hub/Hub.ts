@@ -8,6 +8,7 @@ import { IBuilding } from '@/parts/Manufacture/Building';
 import { IPipe } from '@/parts/Manufacture/Pipe';
 import { Facility, IFacilityPushArgs } from '@/parts/Hub/Facility';
 import { IQueueItem, QueueArea } from '@/parts/Hub/QueueArea';
+import { IPromise, promise } from '@/parts/async';
 
 export interface IHub {
   /**
@@ -41,6 +42,7 @@ export class Hub implements IHub {
   private _repoManufacture :Repository<ManufactureEntity>;
   private _repoPieces :Repository<PieceEntity>;
   private _buildingTypes :Map<string, IBuildingTypeDescriptor>;
+  private _manufactureFinishWaiters :Map<bigint, IPromise<void>[]>;
 
   constructor(args :IHubArgs) {
     this._repoManufacture = args.repoManufacture;
@@ -50,6 +52,7 @@ export class Hub implements IHub {
     this._manufactures = new Map();
     this._facility = new Facility(32);
     this._queueArea = new QueueArea();
+    this._manufactureFinishWaiters = new Map();
   }
 
   private _onBuildingProducePieces(building :IBuilding) {
@@ -117,6 +120,11 @@ export class Hub implements IHub {
         item.vRuntime = QueueArea.getNewVRuntime(spentTime, item);
         if (result.shouldContinue) {
           this._queueArea.push(item);
+        } else {
+          const mid = item.building.manufacture!.id;
+          if (!this._checkManufactureIsWorking(mid)) {
+            this._onFinishManufacture(mid);
+          }
         }
         this._runFacilityFromQueue();
       })
@@ -139,5 +147,52 @@ export class Hub implements IHub {
 
   public get allManufactures() :Map<bigint, Manufacture> {
     return this._manufactures;
+  }
+
+  private _checkManufactureIsWorking(mid :bigint) :boolean {
+    const manufacture = this._manufactures.get(mid);
+    if (!manufacture) {
+      return false;
+    }
+    let detected = false;
+    const { buildings } = manufacture;
+    for (let i = 0; i < buildings.length; i++){
+      const building = buildings[i];
+      if (this._facility.hasBuilding(building.id)) {
+        detected = true;
+        break;
+      }
+      if (this._queueArea.has(building.id)) {
+        detected = true;
+        break;
+      }
+    }
+    return detected;
+  }
+
+  private _onFinishManufacture(mid :bigint) {
+    const list = this._manufactureFinishWaiters.get(mid);
+    if (!list) {
+      return;
+    }
+    this._manufactureFinishWaiters.delete(mid);
+    for (let i = 0; i < list.length; i++){
+      list[i].done();
+    }
+  }
+
+  public waitForFinish(mid :bigint) :Promise<void> {
+    const awaiter = promise<void>();
+    const isWorking = this._checkManufactureIsWorking(mid);
+    if (!isWorking) {
+      awaiter.done();
+    } else {
+      const list = this._manufactureFinishWaiters.get(mid) ?? [];
+      list.push(awaiter);
+      if (list.length === 1) {
+        this._manufactureFinishWaiters.set(mid, list);
+      }
+    }
+    return awaiter.promise;
   }
 }

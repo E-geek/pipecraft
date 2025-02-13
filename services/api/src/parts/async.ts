@@ -6,8 +6,8 @@ export const wait = (timeout :number) :Promise<void> =>
 
 export interface IPromise<T, R = any> {
   promise :Promise<T>;
-  done :(arg :T) =>void;
-  fail :(arg :R) =>void;
+  done :(arg ?:T) =>void;
+  fail :(arg ?:R) =>void;
   resolved :boolean;
 }
 

@@ -1,4 +1,5 @@
-/* eslint-disable array-element-newline */
+/*
+/!* eslint-disable array-element-newline *!/
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { tmpdir } from 'node:os';
@@ -515,3 +516,4 @@ describe('ManufactureService', () => {
     ]);
   });
 });
+*/

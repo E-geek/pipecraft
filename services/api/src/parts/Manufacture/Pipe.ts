@@ -1,4 +1,4 @@
-import { IAttempts, IPiece, IPieceId } from '@pipecraft/types';
+import { IAttempts, IPiece, IPieceId, Nullable } from '@pipecraft/types';
 import { FindManyOptions, FindOperator, In, LessThan, MoreThan, Or, Repository } from 'typeorm';
 import { FindOptionsWhere } from 'typeorm/find-options/FindOptionsWhere';
 import { PipeEntity } from '@/db/entities/PipeEntity';
@@ -8,6 +8,7 @@ import { IManufactureElement } from '@/parts/Manufacture/IManufactureElement';
 import { IBatchGetter } from '@/parts/BatchGetter/BatchGetter';
 import { DirectBatchGetter } from '@/parts/BatchGetter/DirectBatchGetter';
 import { ReverseBatchGetter } from '@/parts/BatchGetter/ReverseBatchGetter';
+import { IManufacture } from '@/parts/Manufacture/Manufacture';
 
 export interface IPipe extends IManufactureElement {
   type :'pipe';
@@ -15,6 +16,7 @@ export interface IPipe extends IManufactureElement {
   to :IBuilding;
   maxAttempts :IAttempts;
   maxHistoryDepth :number;
+  manufacture ?:Nullable<IManufacture>;
 
   make() :Promise<void>;
   sync() :Promise<void>;
@@ -57,6 +59,8 @@ export class Pipe implements IPipe {
   private _holdSet :Set<IPieceId>;
 
   public type :IPipe['type'] = 'pipe';
+
+  public manufacture :Nullable<IManufacture> = null;
 
   constructor({ pipeMemory, from, to, heap, maximumAllocateBatchForPercent } :IPipeParams) {
     this._model = pipeMemory;

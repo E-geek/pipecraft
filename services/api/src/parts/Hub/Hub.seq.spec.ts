@@ -99,11 +99,11 @@ describe('Hub', () => {
         return { okResult: input.map(p => p.pid) };
       },
     };
-    const printerChunks = [] as number[][];
+    const printerChunks = [] as number[];
     const printerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
       gear: async (args) => {
         const input = args.input;
-        printerChunks.push(input.map(p => p.data.data));
+        printerChunks.push(...input.map(p => p.data.data));
         return { okResult: input.map(p => p.pid) };
       },
     };
@@ -120,9 +120,8 @@ describe('Hub', () => {
     await hub.loadAllManufactures();
     const manufacture = hub.allManufactures.get(manufactureEntity.mid)!;
     hub.addBuildingToFacility(manufacture.buildings[0]);
-    expect(printerChunks).toHaveLength(3);
-    expect(printerChunks[0]).toEqual([ 21, 22, 23, 24 ]);
-    expect(printerChunks[1]).toEqual([ 25, 26, 27, 28 ]);
-    expect(printerChunks[2]).toEqual([ 29, 30 ]);
+    await hub.waitForFinish(manufactureEntity.mid);
+    expect(printerChunks).toHaveLength(10);
+    expect(printerChunks.sort()).toEqual([ 21, 22, 23, 24, 25, 26, 27, 28, 29, 30 ]);
   });
 });

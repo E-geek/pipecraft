@@ -8,7 +8,6 @@ import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
 import { PieceEntity } from '@/db/entities/PieceEntity';
 import { BuildingRunConfigEntity } from '@/db/entities/BuildingRunConfigEntity';
 import { Manufacture } from '@/parts/Manufacture/Manufacture';
-import { ManufactureMaker } from '@/parts/Manufacture/ManufactureMaker';
 
 export interface IRunManufactureOptions {
   runConfig ?:IBuildingRunConfigMeta;
@@ -65,40 +64,7 @@ export class ManufactureService {
   }
 
   public async startFromMining(minerId :bigint, options :IRunManufactureOptions) {
-    const miner = await this._repoBuildings.findOne({ where:{ bid: minerId }});
-    if (!miner) {
-      return Error('Miner not found');
-    }
-    if (options.runConfig) {
-      await this._setupRunConfigOnDemand(miner, options.runConfig);
-    }
-    const manufactureModel = await miner.manufacture;
-    let manufacture :Manufacture;
-    if (!manufactureModel) {
-      const manufactureOrError = await this.buildManufacture(minerId);
-      if (manufactureOrError instanceof Error) {
-        return manufactureOrError;
-      }
-      manufacture = manufactureOrError;
-    } else {
-      const manufactureOrError = await this.loadManufacture(manufactureModel);
-      if (manufactureOrError instanceof Error) {
-        return manufactureOrError;
-      }
-      manufacture = manufactureOrError;
-    }
-    await manufacture.mining();
-    let i = 0;
-    while (i < 10000) {
-      const result = await manufacture.tick();
-      if (result instanceof Error) {
-        return result;
-      }
-      if (result === null) {
-        break;
-      }
-      i++;
-    }
+    // rework
   }
 
   public async registerBuildingType(type :string, descriptor :IBuildingTypeDescriptor) :Promise<void> {
@@ -120,15 +86,8 @@ export class ManufactureService {
     this._buildingTypes.clear();
   }
 
-  public buildManufacture(startBuildingId :bigint) :Promise<Manufacture | Error> {
-    return ManufactureMaker.buildManufacture({
-      startBuildingId,
-      onStorePieces: this.onReceive,
-      repoPieces: this._repoPieces,
-      repoBuildings: this._repoBuildings,
-      repoPipes: this._repoPipeMemories,
-      buildingTypes: this._buildingTypes,
-    });
+  public buildManufacture(startBuildingId :bigint)  {
+    // rework
   }
 
   public async storeManufacture(manufacture :Manufacture, title ?:string) :Promise<bigint> {
@@ -143,12 +102,7 @@ export class ManufactureService {
     return model.mid;
   }
 
-  public async loadManufacture(manufactureModel :ManufactureEntity) :Promise<Manufacture | Error> {
-    return ManufactureMaker.loadManufacture({
-      manufactureModel,
-      onStorePieces: this.onReceive,
-      repoPieces: this._repoPieces,
-      buildingTypes: this._buildingTypes,
-    });
+  public async loadManufacture(manufactureModel :ManufactureEntity)  {
+    // rework
   }
 }

@@ -67,10 +67,12 @@ export class Manufacture implements IManufacture {
   }
 
   public registerBuilding(building :IBuilding) {
+    building.manufacture = this;
     this._buildings.add(building);
   }
 
   public registerPipe(pipe :IPipe) {
+    pipe.manufacture = this;
     this._pipes.add(pipe);
   }
 
