@@ -13,6 +13,7 @@ import { getTestDBConf } from '@/test/db.conf';
 import { ManufactureService } from '@/manufacture/manufacture.service';
 import { Hub } from '@/parts/Hub/Hub';
 import { MakeManufacture } from '@/test/MakeManufacture';
+import { wait } from '@/parts/async';
 
 describe('Hub', () => {
   let pieceRepo :Repository<PieceEntity>;
@@ -96,14 +97,15 @@ describe('Hub', () => {
           output.push({ data: piece.data + increment });
         }
         args.push(output);
+        await wait(10);
         return { okResult: input.map(p => p.pid) };
       },
     };
-    const printerChunks = [] as number[];
+    const printerChunks = [] as number[][];
     const printerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
       gear: async (args) => {
         const input = args.input;
-        printerChunks.push(...input.map(p => p.data.data));
+        printerChunks.push(input.map(p => p.data.data));
         return { okResult: input.map(p => p.pid) };
       },
     };
@@ -121,7 +123,9 @@ describe('Hub', () => {
     const manufacture = hub.allManufactures.get(manufactureEntity.mid)!;
     hub.addBuildingToFacility(manufacture.buildings[0]);
     await hub.waitForFinish(manufactureEntity.mid);
-    expect(printerChunks).toHaveLength(10);
-    expect(printerChunks.sort()).toEqual([ 21, 22, 23, 24, 25, 26, 27, 28, 29, 30 ]);
+    expect(printerChunks).toHaveLength(3);
+    expect(printerChunks[0]).toEqual([ 21, 22, 23, 24 ]);
+    expect(printerChunks[1]).toEqual([ 25, 26, 27, 28 ]);
+    expect(printerChunks[2]).toEqual([ 29, 30 ]);
   });
 });

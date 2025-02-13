@@ -12,6 +12,8 @@ export type Arrayable<T> = T | Array<T>;
 
 export type ArrayableNullable<T> = Nullable<Arrayable<T>>;
 
+export type AnyFunction = (...args :any[]) =>any;
+
 export type Primitive = string | number | bigint | boolean | symbol | null | undefined;
 
 export type Promisable<T> = T | Promise<T>;

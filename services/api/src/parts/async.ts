@@ -1,8 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export const wait = (timeout :number) :Promise<void> =>
-  new Promise((resolve) => {
-    setTimeout(resolve, timeout);
+import { AnyFunction } from '@pipecraft/types';
+
+export function wait(time :number) :Promise<undefined>;
+export function wait(time :number, cb :AnyFunction) :number;
+
+export function wait(time :number, cb ?:AnyFunction) {
+  if (cb) {
+    return setTimeout(cb, time) as unknown as number;
+  }
+  return new Promise<undefined>((resolve) => {
+    setTimeout(resolve, time);
   });
+}
 
 export interface IPromise<T, R = any> {
   promise :Promise<T>;
