@@ -13,10 +13,11 @@ import { BuildingEntity } from '@/db/entities/BuildingEntity';
 import { IManufactureElement } from '@/parts/Manufacture/IManufactureElement';
 import { IManufacture } from '@/parts/Manufacture/Manufacture';
 
-export type IBuildingState = 'idle' | 'wait' | 'work';
+export type IBuildingState = 'idle' | 'wait' | 'work' | 'suspend';
 
 export interface IBuilding extends IManufactureElement {
   type :'building';
+  manufacture ?:Nullable<IManufacture>;
   readonly id :bigint;
   readonly config :BuildingRunConfigEntity;
   readonly batchSize :string;
@@ -27,10 +28,11 @@ export interface IBuilding extends IManufactureElement {
   readonly isExclusiveBuildingType :boolean;
   readonly nice :number;
   readonly state :IBuildingState;
+
   getModel() :BuildingEntity;
   run(push :IBuildingPushFunction, input ?:IPiece[]) :Promise<IBuildingRunResult>;
   setState(state :IBuildingState) :void;
-  manufacture ?:Nullable<IManufacture>;
+  isBuildingCanFacility() :boolean;
 }
 
 export class Building implements IBuilding {
@@ -132,6 +134,13 @@ export class Building implements IBuilding {
 
   public setState(state :IBuildingState) { // сеттер так отличается, чтобы быть видимым экшеном
     this._state = state;
+  }
+
+  public isBuildingCanFacility() {
+    if (!this.manufacture) {
+      return false;
+    }
+    return this.manufacture.isBuildingCanFacility(this);
   }
 }
 

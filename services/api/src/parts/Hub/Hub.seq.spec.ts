@@ -68,7 +68,11 @@ describe('Hub', () => {
         printer: 'printAll',
         batch: '100%',
       },
-    ]);
+    ], {
+      meta: {
+        isSequential: false,
+      },
+    });
     expect(manufactureEntity).toBeInstanceOf(ManufactureEntity);
     expect(manufactureEntity.buildings).toHaveLength(3);
     expect(manufactureEntity.pipes).toHaveLength(2);
@@ -156,7 +160,11 @@ describe('Hub', () => {
         printer: 'printAll',
         batch: '100%',
       },
-    ]);
+    ], {
+      meta: {
+        isSequential: true,
+      },
+    });
     const minerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
       gear: async (args) => {
         const startFrom :number = (args.runConfig?.startFrom as null | number) ?? 0;

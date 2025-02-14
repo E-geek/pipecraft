@@ -25,6 +25,9 @@ describe('QueueArea', () => {
       setState(state :IBuildingState) {
         this.state = state;
       },
+      isBuildingCanFacility() :boolean {
+        return true;
+      },
     } as IBuilding;
     pipe = {} as IPipe;
     batch = [ {} as IPiece ];

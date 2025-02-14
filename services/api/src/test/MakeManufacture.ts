@@ -50,6 +50,7 @@ export class MakeManufacture {
   /**
    * Make a simple linear manufacture from scheme and receive ManufactureEntity
    * @param schema
+   * @param entityParams entity params directly
    * @example
    * schemaExample :IManufactureSchema = [
    *   {
@@ -80,7 +81,7 @@ export class MakeManufacture {
    *   },
    * ];
    */
-  public static async make(schema :IManufactureSchema) :Promise<ManufactureEntity> {
+  public static async make(schema :IManufactureSchema, entityParams :Partial<ManufactureEntity> = {}) :Promise<ManufactureEntity> {
     const buildingTypes = [];
     const buildings = [];
     const runConfigs = [];
@@ -137,6 +138,7 @@ export class MakeManufacture {
       }));
     }
     const manufactureEntity = new ManufactureEntity({
+      ...entityParams,
       pipes,
       buildings,
       title,

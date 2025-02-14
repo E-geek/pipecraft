@@ -32,13 +32,15 @@ export interface IManufacture {
   pipeTickWithBatch(pipe :IPipe, batch :IPiece[]) :Promise<IBuildingRunResult | null>;
 
   getPipesFrom(building :IBuilding) :IPipe[];
+
+  isBuildingCanFacility(building :IBuilding) :boolean;
 }
 
 export type IManufactureOnStorePieces = (building :IBuilding) =>Promisable<void>;
 
 export class Manufacture implements IManufacture {
   private _pipes :Set<IPipe>;
-  private _buildings :Set<IBuilding>;
+  private _buildings :Map<bigint, IBuilding>;
   private _model :Nullable<ManufactureEntity>;
   private _loop :(IPipe)[];
   private _onStorePieces :IManufactureOnStorePieces;
@@ -46,11 +48,13 @@ export class Manufacture implements IManufacture {
 
   public isActive = false;
   private _throttleStorePieces :ThrottleStorePieces;
+  private _buildingOrder :bigint[];
 
   constructor(onStorePieces :IManufactureOnStorePieces, repoPieces :Repository<PieceEntity>, model :Nullable<ManufactureEntity> = null) {
     this._pipes = new Set();
-    this._buildings = new Set();
+    this._buildings = new Map();
     this._loop = [];
+    this._buildingOrder = [];
     this._model = model;
     this._onStorePieces = onStorePieces;
     this._repoPieces = repoPieces;
@@ -71,7 +75,7 @@ export class Manufacture implements IManufacture {
 
   public registerBuilding(building :IBuilding) {
     building.manufacture = this;
-    this._buildings.add(building);
+    this._buildings.set(building.id, building);
   }
 
   public registerPipe(pipe :IPipe) {
@@ -102,10 +106,53 @@ export class Manufacture implements IManufacture {
       this._model.pipes.push(model);
     }
     this._model.buildings = [];
-    for (const building of this._buildings) {
+    for (const building of this._buildings.values()) {
       const model = building.getModel();
       model.manufacture = this._model;
       this._model.buildings.push(model);
+    }
+    // create network for isSequential case
+    this._makeBuildingOrder();
+  }
+
+  private _makeBuildingOrder() {
+    const fromTo = new Map<bigint, bigint[]>();
+    for(const pipe of this._pipes) {
+      const from = pipe.from.id;
+      const to = pipe.to.id;
+      const ids = fromTo.get(from) ?? [];
+      ids.push(to);
+      if (ids.length === 1) {
+        fromTo.set(from, ids);
+      }
+    }
+    const miners = this.buildings.filter(building => building.isMiner);
+    const orderSet = new Set<bigint>(miners.map(miner => miner.id));
+    for (const miner of miners) {
+      this._makeBuildingOrderFromMiner(miner.id, orderSet, fromTo);
+    }
+    this._buildingOrder = [ ...orderSet ];
+  }
+
+  private _makeBuildingOrderFromMiner(minerId :bigint, orderSet :Set<bigint>, fromToMap :Map<bigint, bigint[]>) {
+    const checkedBids = new Set<bigint>([ minerId ]);
+    const bids = [ minerId ];
+    let i = -1;
+    while (i++ < 1000) {
+      const bid = bids[i];
+      if (bid == null) {
+        break;
+      }
+      const toIds = fromToMap.get(bid) ?? [];
+      for (let i1 = 0; i1 < toIds.length; i1++){
+        const toId = toIds[i1];
+        if (checkedBids.has(toId)) {
+          continue;
+        }
+        checkedBids.add(toId);
+        orderSet.add(toId);
+        bids.push(toId);
+      }
     }
   }
 
@@ -179,7 +226,7 @@ export class Manufacture implements IManufacture {
   }
 
   public get buildings() {
-    return [ ...this._buildings ];
+    return [ ...this._buildings.values() ];
   }
 
   public get pipes() {
@@ -197,5 +244,29 @@ export class Manufacture implements IManufacture {
   public getPipesFrom(building :IBuilding) :IPipe[] {
     // can be optimised
     return [ ...this._pipes ].filter(pipe => pipe.from === building);
+  }
+
+  public isBuildingCanFacility(building :IBuilding) :boolean {
+    if (building.manufacture !== this) {
+      return false;
+    }
+    if (building.state === 'suspend') {
+      return false;
+    }
+    if (this.isSequential) {
+      const order = this._buildingOrder;
+      for (let i = 0; i < order.length; i++) {
+        const buildingId = order[i];
+        const candidateBuilding = this._buildings.get(buildingId);
+        if (!candidateBuilding) {
+          return false;
+        }
+        if (candidateBuilding.state === 'work' || candidateBuilding.state === 'wait') {
+          return candidateBuilding === building;
+        }
+      }
+      return true;
+    }
+    return true;
   }
 }

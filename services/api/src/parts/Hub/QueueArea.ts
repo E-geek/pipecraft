@@ -62,14 +62,18 @@ export class QueueArea {
     // should be optimised
     for (let i = 0; i < this._heap.length; i++) {
       const item = this._heap[i];
-      if (exclusiveIdsSet.has(item.building.buildingTypeId)) {
+      const { vRuntime, building } = item;
+      if (exclusiveIdsSet.has(building.buildingTypeId)) {
         continue;
       }
-      if (seqManufactureIdsSet.has(item.building.manufacture!.id)) {
+      if (seqManufactureIdsSet.has(building.manufacture!.id)) {
         continue;
       }
-      if (item.vRuntime < minVRuntime) {
-        minVRuntime = item.vRuntime;
+      if (!building.isBuildingCanFacility()) {
+        continue;
+      }
+      if (vRuntime < minVRuntime) {
+        minVRuntime = vRuntime;
         minIndex = i;
       }
     }
