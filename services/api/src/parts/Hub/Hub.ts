@@ -27,6 +27,13 @@ export interface IHub {
    * @param mid
    */
   waitForFinish(mid :bigint) :Promise<void>;
+
+  /**
+   * Add building to working process
+   * @param building IBuilding from loaded manufactures
+   * @param pipe IPipe should be provided for non-miner building
+   */
+  addBuildingToFacility(building :IBuilding, pipe ?:IPipe) :void;
 }
 
 export interface IHubArgs {
@@ -55,13 +62,8 @@ export class Hub implements IHub {
     this._manufactureFinishWaiters = new Map();
   }
 
-  private _onBuildingProducePieces(building :IBuilding) {
-    const manufacture = building.manufacture!;
-    const pipes = manufacture.getPipesFrom(building);
-    for (let i = 0; i < pipes.length; i++){
-      const pipe = pipes[i];
-      this.addBuildingToFacility(pipe.to, pipe);
-    }
+  public get allManufactures() :Map<bigint, Manufacture> {
+    return this._manufactures;
   }
 
   public async loadAllManufactures() {
@@ -111,6 +113,30 @@ export class Hub implements IHub {
     this._runFacilityFromQueue();
   }
 
+  public waitForFinish(mid :bigint) :Promise<void> {
+    const awaiter = promise<void>();
+    const isWorking = this._checkManufactureIsWorking(mid);
+    if (!isWorking) {
+      awaiter.done();
+    } else {
+      const list = this._manufactureFinishWaiters.get(mid) ?? [];
+      list.push(awaiter);
+      if (list.length === 1) {
+        this._manufactureFinishWaiters.set(mid, list);
+      }
+    }
+    return awaiter.promise;
+  }
+
+  private _onBuildingProducePieces(building :IBuilding) {
+    const manufacture = building.manufacture!;
+    const pipes = manufacture.getPipesFrom(building);
+    for (let i = 0; i < pipes.length; i++){
+      const pipe = pipes[i];
+      this.addBuildingToFacility(pipe.to, pipe);
+    }
+  }
+
   private _pushItemToFacility(item :IQueueItem) {
     this
       ._facility
@@ -146,10 +172,6 @@ export class Hub implements IHub {
     }
   }
 
-  public get allManufactures() :Map<bigint, Manufacture> {
-    return this._manufactures;
-  }
-
   private _checkManufactureIsWorking(mid :bigint) :boolean {
     const manufacture = this._manufactures.get(mid);
     if (!manufacture) {
@@ -180,20 +202,5 @@ export class Hub implements IHub {
     for (let i = 0; i < list.length; i++){
       list[i].done();
     }
-  }
-
-  public waitForFinish(mid :bigint) :Promise<void> {
-    const awaiter = promise<void>();
-    const isWorking = this._checkManufactureIsWorking(mid);
-    if (!isWorking) {
-      awaiter.done();
-    } else {
-      const list = this._manufactureFinishWaiters.get(mid) ?? [];
-      list.push(awaiter);
-      if (list.length === 1) {
-        this._manufactureFinishWaiters.set(mid, list);
-      }
-    }
-    return awaiter.promise;
   }
 }

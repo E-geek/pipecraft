@@ -169,7 +169,7 @@ export class Pipe implements IPipe {
 
   private _getWhereOptions() :FindManyOptions<PieceEntity> {
     const from = this._from.id;
-    const { ordering, firstCursor, lastCursor } = this._model;
+    const { firstCursor, lastCursor } = this._model;
     const pidCondition :FindOperator<any>[] = [];
     if (firstCursor >= 0) {
       pidCondition.push(LessThan(firstCursor));
@@ -186,7 +186,7 @@ export class Pipe implements IPipe {
         createdAt: MoreThan(new Date(Date.now() - this.maxHistoryDepth)),
       },
       order: {
-        pid: ordering === 'reverse' ? 'DESC' : 'ASC',
+        pid: 'ASC',
       },
     };
     if (pidCondition.length) {

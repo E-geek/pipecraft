@@ -19,6 +19,8 @@ export interface IQueueArea {
 
 export class QueueArea {
   private _heap :IQueueItem[];
+  private _minVRuntime = 0;
+
   constructor() {
     this._heap = [];
   }
@@ -34,7 +36,7 @@ export class QueueArea {
     }
     if (pushedItem.vRuntime === -1) {
       if (this.isEmpty) {
-        pushedItem.vRuntime = 0;
+        pushedItem.vRuntime = this._minVRuntime;
       } else {
         let minVRuntime = this._heap[0].vRuntime;
         // search min value
@@ -48,6 +50,7 @@ export class QueueArea {
     }
     pushedItem.building.setState('wait');
     this._heap.push(pushedItem);
+    this._minVRuntime = Math.min(...this._heap.map(({ vRuntime }) => vRuntime));
     return this;
   }
 
