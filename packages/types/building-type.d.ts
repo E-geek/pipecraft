@@ -1,5 +1,6 @@
 import { MixedList } from 'typeorm/common/MixedList';
 import { Repository } from 'typeorm';
+import { BaseDataSourceOptions } from 'typeorm/data-source/BaseDataSourceOptions';
 import { JsonMap } from './json';
 import { IPiece, IPieceId, IPieceMeta } from './piece';
 import { Constructor, Promisable } from './basic';
@@ -39,7 +40,7 @@ export interface IBuildingRunResult {
   errorLogs ?:string[];
 }
 
-export type IBuildingGear<InputType = IPiece, OutputType = IPieceMeta> = (args :IBuildingRunArgs<InputType, OutputType>) =>Promise<Omit<IBuildingRunResult, 'addNewPieces'>>;
+export type IBuildingGear<InputType = IPiece, OutputType = IPieceMeta> = (args :IBuildingRunArgs<InputType, OutputType>) =>Promise<IBuildingRunResult>;
 
 export interface IBuildingTypeDescriptor<InputType = IPiece, OutputType = IPieceMeta> {
   gear :IBuildingGear<InputType, OutputType>;
@@ -48,4 +49,9 @@ export interface IBuildingTypeDescriptor<InputType = IPiece, OutputType = IPiece
     // eslint-disable-next-line @typescript-eslint/ban-types
     migrations ?:MixedList<Function | string>;
   }
+}
+
+export interface IBuildingTypeExport<InputType = IPiece, OutputType = IPieceMeta> extends Pick<BaseDataSourceOptions, 'entities' | 'migrations'>{
+  title :string; // title for DB
+  descriptor :IBuildingTypeDescriptor<InputType, OutputType>;
 }

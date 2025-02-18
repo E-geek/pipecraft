@@ -21,6 +21,7 @@ export default registerAs('database', () => {
     entities: [ `${__dirname}/../db/entities/*.{ts,js}` ],
     migrations: [ `${__dirname}/../db/migrations/*.{ts,js}` ],
     autoLoadEntities: true,
+    migrationsRun: true,
     synchronize: false,
     logging: 'all',
   } as PostgresConnectionOptions;

@@ -64,11 +64,7 @@ export class Building implements IBuilding {
   public async run(push :IBuildingPushFunction, input :IPiece[] = []) :Promise<IBuildingRunResult> {
     this._isWorks = true;
     try {
-      let addNewPieces = 0;
-      const pushTo :IBuildingPushFunction = (pieces) => {
-        addNewPieces += pieces.length;
-        return push(pieces);
-      };
+      const pushTo :IBuildingPushFunction = (pieces) => push(pieces);
       const res =  await this._gear({
         input,
         push: pushTo,
@@ -80,7 +76,6 @@ export class Building implements IBuilding {
       });
       return {
         ...res,
-        addNewPieces,
       } as IBuildingRunResult;
     } catch (error) {
       console.error(`Run building ${this._model.bid} error:`, (error as Error).message);
