@@ -1,4 +1,10 @@
-import { IBuildingTypeType, JsonMap } from '@pipecraft/types';
+import {
+  IBuildingMeta,
+  IBuildingRunConfigMeta,
+  IBuildingTypeMeta,
+  IBuildingTypeType,
+  Nullable,
+} from '@pipecraft/types';
 import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
 import { BuildingTypeEntity } from '@/db/entities/BuildingTypeEntity';
 import { BuildingEntity } from '@/db/entities/BuildingEntity';
@@ -7,9 +13,9 @@ import { BuildingRunConfigEntity } from '@/db/entities/BuildingRunConfigEntity';
 import { PipeEntity } from '@/db/entities/PipeEntity';
 
 export interface IManufactureSchemaItemBase {
-  meta ?:JsonMap;
-  config ?:JsonMap;
-  buildingMeta ?:JsonMap;
+  meta ?:Partial<IBuildingTypeMeta>;
+  config ?:IBuildingRunConfigMeta;
+  buildingMeta ?:IBuildingMeta;
 }
 
 export interface IManufactureSchemaItemMiner extends IManufactureSchemaItemBase {
@@ -104,28 +110,38 @@ export class MakeManufacture {
         moduleId = building.printer;
         batchSize = building.batch ?? '1';
       }
+      let reverse = false;
+      if (batchSize.startsWith('r')) {
+        batchSize = batchSize.slice(1);
+        reverse = true;
+      }
       if (type === 'logic') {
         throw new Error('Unknown building type');
       }
       const buildingTypeMeta = building.meta || {};
       const buildingMeta = building.buildingMeta || {};
-      const runCongigMeta = building.config || {};
-      const buildingType = new BuildingTypeEntity({
+      const runConfigMeta = building.config || {};
+      const buildingTypeByTitle = await BuildingTypeEntity.findOne({ where: {
+        title: (buildingTypeMeta.title as Nullable<string>) ?? '',
+      }});
+      const buildingType = buildingTypeByTitle ?? new BuildingTypeEntity({
         meta: { type, ...buildingTypeMeta },
         moduleId,
         title: `${moduleId} from make #${title}`,
       });
       const buildingEntity = new BuildingEntity({
         owner,
-        meta: { ...buildingMeta },
+        meta: { ...buildingMeta, reverse },
         type: buildingType,
         batchSize,
       });
       const runConfig = new BuildingRunConfigEntity({
-        runConfig: runCongigMeta,
+        runConfig: runConfigMeta,
         building: buildingEntity,
       });
-      buildingTypes.push(buildingType);
+      if (!buildingTypeByTitle) {
+        buildingTypes.push(buildingType);
+      }
       buildings.push(buildingEntity);
       runConfigs.push(runConfig);
     }
@@ -135,6 +151,7 @@ export class MakeManufacture {
       pipes.push(new PipeEntity({
         from: buildingEntityFrom,
         to: buildingEntityTo,
+        ordering: buildingEntityTo.meta.reverse ? 'reverse' : 'direct',
       }));
     }
     const manufactureEntity = new ManufactureEntity({

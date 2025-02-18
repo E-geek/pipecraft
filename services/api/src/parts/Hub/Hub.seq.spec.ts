@@ -15,13 +15,61 @@ import { Hub } from '@/parts/Hub/Hub';
 import { MakeManufacture } from '@/test/MakeManufacture';
 import { wait } from '@/parts/async';
 
-describe('Hub', () => {
+describe('Hub.seq', () => {
   let pieceRepo :Repository<PieceEntity>;
   let testPrinterRepo :Repository<TestPrinter>;
   let manufactureRepo :Repository<ManufactureEntity>;
 
   type IPieceMetaLocal = IPieceMeta & { data :number };
   type IPieceLocal = IPiece<IPieceMetaLocal>;
+
+  class PerfParallelCounter {
+    private _spent = 0n;
+    private _lastChange = 0n;
+    private _tasks :bigint[] = [];
+    private _stack = 0;
+    private _max = 0;
+
+    constructor (private _w = false) {
+    }
+
+    start() :number {
+      const id = this._tasks.length;
+      const now = process.hrtime.bigint();
+      this._tasks[id] = now;
+      this._stack++;
+      if (this._stack > this._max) {
+        this._max = this._stack;
+      }
+      if (this._stack === 1) {
+        this._lastChange = now;
+      }
+      return id;
+    }
+
+    stop(id :number) {
+      const now = process.hrtime.bigint();
+      this._tasks[id] = now - this._tasks[id]; // spent time per task
+      this._stack--;
+      if (this._stack === 0) {
+        this._spent += now - this._lastChange;
+      }
+    }
+
+    isComplete() {
+      return this._stack === 0;
+    }
+
+    getReport() {
+      const max = this._max;
+      let sum = 0n;
+      for (const task of this._tasks) {
+        sum += task;
+      }
+      const avg = Number(sum) / Number(this._spent);
+      return { max, avg };
+    }
+  }
 
   beforeEach(async () => {
     const module :TestingModule = await Test.createTestingModule({
@@ -215,5 +263,156 @@ describe('Hub', () => {
     expect(printerChunks).toHaveLength(1);
     expect(countRunDescriptor).toMatchObject([ 11, 11, 11, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 ]);
     expect(printerChunks[0]).toEqual([ 26, 27, 28, 29, 30, 31, 32, 33, 34, 35 ]);
+  });
+
+  it('2 manufacture, parallel mining, exclusive factories, parallel printing', async () => {
+    const manufactureEntity1 = await MakeManufacture.make([
+      {
+        miner: 'numberMiner',
+        config: {
+          startFrom: 13,
+          mineByRound: 10,
+        },
+      },
+      {
+        factory: 'incrementBy',
+        batch: 'r4',
+        meta: {
+          isExclusive: true,
+        },
+        config: {
+          increment: 7,
+        },
+      },
+      {
+        printer: 'printAll',
+        batch: '1',
+      },
+    ], {
+      meta: {
+        isSequential: false,
+      },
+    });
+    const manufactureEntity2 = await MakeManufacture.make([
+      {
+        miner: 'numberMiner',
+        meta: {
+          title: manufactureEntity1.buildings[0]!.type.title,
+        },
+        config: {
+          startFrom: 103,
+          mineByRound: 10,
+        },
+      },
+      {
+        factory: 'incrementBy',
+        batch: '3',
+        meta: {
+          title: manufactureEntity1.buildings[1]!.type.title,
+        },
+        config: {
+          increment: 5,
+        },
+      },
+      {
+        printer: 'printAll',
+        batch: '1',
+        meta: {
+          title: manufactureEntity1.buildings[2]!.type.title,
+        },
+      },
+    ], {
+      meta: {
+        isSequential: false,
+      },
+    });
+    const minerCounter = new PerfParallelCounter();
+    const factoryCounter = new PerfParallelCounter(true);
+    const printerCounter = new PerfParallelCounter();
+    const allCounter = new PerfParallelCounter();
+    const minerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
+      gear: async (args) => {
+        const mpid = minerCounter.start();
+        const bpid = allCounter.start();
+        const startFrom :number = (args.runConfig?.startFrom as null | number) ?? 0;
+        const mineByRound :number = (args.runConfig?.mineByRound as null | number) ?? 1;
+        for (let i = startFrom; i < startFrom + mineByRound; i++) {
+          if (i % 5 === 0) {
+            await wait(10);
+          }
+          args.push([{ data: i }] );
+        }
+        minerCounter.stop(mpid);
+        allCounter.stop(bpid);
+        return { okResult: []};
+      },
+    };
+    const factoryDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
+      gear: async (args) => {
+        const fpid = factoryCounter.start();
+        const bpid = allCounter.start();
+        const input = args.input;
+        const output = [] as IPieceMetaLocal[];
+        const increment = (args.runConfig?.increment as null | number) ?? 0;
+        for (const { data: piece } of input) {
+          output.push({ data: piece.data + increment });
+        }
+        args.push(output);
+        await wait(10);
+        factoryCounter.stop(fpid);
+        allCounter.stop(bpid);
+        return { okResult: input.map(p => p.pid) };
+      },
+    };
+    const printerChunks = new Map<bigint, number[]>();
+    const printerDescriptor :IBuildingTypeDescriptor<IPieceLocal, IPieceMetaLocal> = {
+      gear: async (args) => {
+        const ppid = printerCounter.start();
+        const bpid = allCounter.start();
+        await wait(2);
+        const { input, bid } = args;
+
+        const stored = printerChunks.get(bid) ?? [];
+        stored.push(...input.map(p => p.data.data));
+        printerChunks.set(bid, stored);
+
+        printerCounter.stop(ppid);
+        allCounter.stop(bpid);
+        return { okResult: input.map(p => p.pid) };
+      },
+    };
+    const hub = new Hub({
+      repoManufacture: manufactureRepo,
+      repoPieces: pieceRepo,
+      buildingTypes: new Map([
+        [ 'numberMiner', minerDescriptor ],
+        [ 'incrementBy', factoryDescriptor ],
+        [ 'printAll', printerDescriptor ],
+      ]),
+    });
+    await hub.loadAllManufactures();
+    const manufacture1 = hub.allManufactures.get(manufactureEntity1.mid)!;
+    const manufacture2 = hub.allManufactures.get(manufactureEntity2.mid)!;
+    hub.addBuildingToFacility(manufacture1.buildings[0]);
+    hub.addBuildingToFacility(manufacture2.buildings[0]);
+    await Promise.all([
+      hub.waitForFinish(manufactureEntity1.mid),
+      hub.waitForFinish(manufactureEntity2.mid),
+    ]);
+    expect(minerCounter.isComplete()).toBe(true);
+    expect(factoryCounter.isComplete()).toBe(true);
+    expect(printerCounter.isComplete()).toBe(true);
+    expect(allCounter.isComplete()).toBe(true);
+    expect(printerChunks.size).toBe(2);
+    const minerReport = minerCounter.getReport();
+    const factoryReport = factoryCounter.getReport();
+    const printerReport = printerCounter.getReport();
+    const allReport = allCounter.getReport();
+    expect(minerReport.max).toBe(2);
+    expect(minerReport.avg).toBeGreaterThanOrEqual(1);
+    expect(factoryReport.max).toBe(1);
+    expect(factoryReport.avg).toBeLessThan(1.05);
+    expect(printerReport.max).toBeGreaterThanOrEqual(1);
+    expect(allReport.max).toBeGreaterThanOrEqual(2);
   });
 });

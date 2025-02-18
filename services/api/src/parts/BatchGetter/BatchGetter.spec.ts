@@ -243,4 +243,39 @@ describe('BatchGetter', () => {
       expect(id % 2n).toBe(0n);
     }
   });
+
+  it('bug with 2 on start, add 5, add 3 and receive by 4 max', () => {
+    const holdList = new Set<IPieceId>();
+    const recycleList = new Map<IPieceId, IAttempts>();
+    const heapList = new Set([ 2n, 1n ] as IPieceId[]);
+    const batchGetter = new ReverseBatchGetter({
+      firstCursor: -1n as IPieceId,
+      lastCursor: -1n as IPieceId,
+      heapList: heapList,
+      holdList: holdList,
+      recycleList: recycleList,
+      maxAttempts: 5 as IAttempts,
+    });
+    const batches :IPieceId[][] = [];
+    batches.push(batchGetter.getBatch(4)); // 2, 1
+    for (let i = 7n; i >= 3n; i--) {
+      heapList.add(i as IPieceId);
+    }
+    batchGetter.release(batches[0]);
+    batches.push(batchGetter.getBatch(4)); // 7, 6, 5, 4
+    batchGetter.release(batches[1]);
+    batches.push(batchGetter.getBatch(4)); // 3
+    batchGetter.release(batches[2]);
+    for (let i = 10n; i >= 8n; i--) {
+      heapList.add(i as IPieceId);
+    }
+    batches.push(batchGetter.getBatch(4)); // 10, 9, 8
+    batchGetter.release(batches[3]);
+    expect(batches).toMatchObject([
+      [ 2n, 1n ],
+      [ 7n, 6n, 5n, 4n ],
+      [ 3n ],
+      [ 10n, 9n, 8n ],
+    ]);
+  });
 });

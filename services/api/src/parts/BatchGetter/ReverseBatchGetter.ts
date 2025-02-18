@@ -14,7 +14,7 @@ export class ReverseBatchGetter extends BatchGetter {
       return [];
     }
     const cursor = this._lastCursor;
-    const reversedHeap = Array.from(this._heapList).reverse();
+    const reversedHeap = Array.from(this._heapList).sort(sort);
     if (cursor !== -1n) { // init has done
       const added = this._recycleFromPointerToEnd(cursor, reversedHeap, 'reverse');
       if (added > 0) {
