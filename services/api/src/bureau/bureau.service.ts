@@ -32,10 +32,10 @@ export class BureauService {
   }
 
   getEntities() :IBuildingTypeExport['entities'] {
-    return this._listBuildingTypes.map(({ entities }) => entities).flat() as string[];
+    return this._listBuildingTypes.map(({ entities }) => entities).flat().filter(item => !!item) as string[];
   }
 
   getMigrations() :IBuildingTypeExport['migrations'] {
-    return this._listBuildingTypes.map(({ migrations }) => migrations).flat() as string[];
+    return this._listBuildingTypes.map(({ migrations }) => migrations).flat().filter(item => !!item) as string[];
   }
 }
