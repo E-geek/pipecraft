@@ -36,7 +36,9 @@ describe('Deduplicator descriptor', () => {
     expect(args.push).toHaveBeenCalledWith([{ key: 'value' }]);
     expect(result.okResult).toEqual([ 'pid1' ]);
     expect(result.errorResult).toEqual([]);
-    expect(result.errorLogs).toEqual([]);
+    expect(result.logs).toEqual([{
+      'message': 'Process: 1, Pass: 1, Reject: 0',
+    }]);
   });
 
   it('processes input pieces and deduplicates based on sha256 type', async () => {
@@ -59,7 +61,9 @@ describe('Deduplicator descriptor', () => {
     expect(args.push).toHaveBeenCalledWith([{ key: 'value' }]);
     expect(result.okResult).toEqual([ 'pid1' ]);
     expect(result.errorResult).toEqual([]);
-    expect(result.errorLogs).toEqual([]);
+    expect(result.logs).toEqual([{
+      'message': 'Process: 1, Pass: 1, Reject: 0',
+    }]);
   });
 
   it('rejects duplicate pieces based on raw type', async () => {
@@ -81,7 +85,9 @@ describe('Deduplicator descriptor', () => {
     expect(args.push).toHaveBeenCalledWith([]);
     expect(result.okResult).toEqual([ 'pid1' ]);
     expect(result.errorResult).toEqual([]);
-    expect(result.errorLogs).toEqual([]);
+    expect(result.logs).toEqual([{
+      'message': 'Process: 1, Pass: 0, Reject: 1',
+    }]);
   });
 
   it('rejects duplicate pieces based on sha256 type', async () => {
@@ -104,7 +110,9 @@ describe('Deduplicator descriptor', () => {
     expect(args.push).toHaveBeenCalledWith([]);
     expect(result.okResult).toEqual([ 'pid1' ]);
     expect(result.errorResult).toEqual([]);
-    expect(result.errorLogs).toEqual([]);
+    expect(result.logs).toEqual([{
+      'message': 'Process: 1, Pass: 0, Reject: 1',
+    }]);
   });
 
   it('processes input pieces with custom path', async () => {
@@ -126,6 +134,8 @@ describe('Deduplicator descriptor', () => {
     expect(args.push).toHaveBeenCalledWith([{ key: { nested: 'value' }}]);
     expect(result.okResult).toEqual([ 'pid1' ]);
     expect(result.errorResult).toEqual([]);
-    expect(result.errorLogs).toEqual([]);
+    expect(result.logs).toEqual([{
+      'message': 'Process: 1, Pass: 1, Reject: 0',
+    }]);
   });
 });

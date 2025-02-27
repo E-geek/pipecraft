@@ -34,13 +34,21 @@ export interface IBuildingRunArgs<InputType = IPiece, OutputType = IPieceMeta> {
   memory :[Repository<IBuildingMemory>, Constructor<IBuildingMemory>][];
 }
 
+export type IBuildingLogLevel = 'LOG' | 'DEBUG' | 'WARN' | 'ERROR' | 'FATAL';
+
+export interface IBuildingReturnLogRecord {
+  message :string;
+  pids ?:IPieceId[]; // possible not set
+  level ?:IBuildingLogLevel; // default is 'LOG'
+}
+
 export interface IBuildingRunResult {
   okResult :IPieceId[];
   errorResult ?:IPieceId[];
-  errorLogs ?:string[];
+  logs ?:IBuildingReturnLogRecord[];
 }
 
-export type IBuildingGear<InputType = IPiece, OutputType = IPieceMeta> = (args :IBuildingRunArgs<InputType, OutputType>) =>Promise<IBuildingRunResult>;
+export type IBuildingGear<InputType = IPiece, OutputType = IPieceMeta> = (args :IBuildingRunArgs<InputType, OutputType>) =>Promisable<IBuildingRunResult>;
 
 export interface IBuildingTypeDescriptor<InputType = IPiece, OutputType = IPieceMeta> {
   gear :IBuildingGear<InputType, OutputType>;

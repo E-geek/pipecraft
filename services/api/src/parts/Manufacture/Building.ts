@@ -82,7 +82,7 @@ export class Building implements IBuilding {
       return {
         okResult: [],
         errorResult: input.map(({ pid }) => pid),
-        errorLogs: [ (error as Error).message ],
+        logs: [{ message:(error as Error).message, level:'ERROR' }],
       };
     }
   }

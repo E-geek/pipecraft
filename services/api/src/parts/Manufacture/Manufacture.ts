@@ -3,6 +3,7 @@ import { Repository } from 'typeorm';
 import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
 import { PieceEntity } from '@/db/entities/PieceEntity';
 import { BuildingEntity } from '@/db/entities/BuildingEntity';
+import { IQuasiReportEntity, RunReportEntity } from '@/db/entities/RunReportEntity';
 import { IBuilding } from '@/parts/Manufacture/Building';
 import { IPipe } from '@/parts/Manufacture/Pipe';
 import { ThrottleStorePieces } from '@/parts/ThrottleStorePieces/ThrottleStorePieces';
@@ -38,6 +39,13 @@ export interface IManufacture {
 
 export type IManufactureOnStorePieces = (building :IBuilding) =>Promisable<void>;
 
+interface IManufactureArgs {
+  onStorePieces :IManufactureOnStorePieces;
+  repoPieces :Repository<PieceEntity>;
+  repoRunReports :Repository<RunReportEntity>;
+  model ?:Nullable<ManufactureEntity>;
+}
+
 export class Manufacture implements IManufacture {
   private _pipes :Set<IPipe>;
   private _buildings :Map<bigint, IBuilding>;
@@ -45,12 +53,13 @@ export class Manufacture implements IManufacture {
   private _loop :(IPipe)[];
   private _onStorePieces :IManufactureOnStorePieces;
   private _repoPieces :Repository<PieceEntity>;
+  private _repoRunReport :Repository<RunReportEntity>;
 
   public isActive = false;
   private _throttleStorePieces :ThrottleStorePieces;
   private _buildingOrder :bigint[];
 
-  constructor(onStorePieces :IManufactureOnStorePieces, repoPieces :Repository<PieceEntity>, model :Nullable<ManufactureEntity> = null) {
+  constructor({ onStorePieces, repoPieces, repoRunReports, model=null } :IManufactureArgs) {
     this._pipes = new Set();
     this._buildings = new Map();
     this._loop = [];
@@ -58,6 +67,7 @@ export class Manufacture implements IManufacture {
     this._model = model;
     this._onStorePieces = onStorePieces;
     this._repoPieces = repoPieces;
+    this._repoRunReport = repoRunReports;
     this._throttleStorePieces = new ThrottleStorePieces(repoPieces);
   }
 
@@ -162,20 +172,28 @@ export class Manufacture implements IManufacture {
     );
     const result :Required<IBuildingRunResult> = {
       okResult: [],
-      errorLogs: [],
+      logs: [],
       errorResult: [],
     };
     for (const miner of miners) {
       const minerEntity = miner.getModel();
       const promises :Promise<void>[] = [];
-      const out = await miner.run(this._onPush(promises, minerEntity, miner));
+      const res = await miner.run(this._onPush(promises, minerEntity, miner));
       await Promise.all(promises);
-      result.okResult.push(...out.okResult);
-      if (out.errorLogs) {
-        result.errorLogs.push(...out.errorLogs);
+      if (res.logs?.length) {
+        const runReports = RunReportEntity.prepare(res.logs.map((report) => ({
+          ...report,
+          bid: miner.id,
+          runConfig: miner.getModel().lastRunConfig,
+        } as IQuasiReportEntity)));
+        await this._repoRunReport.save(runReports);
       }
-      if (out.errorResult) {
-        result.errorResult.push(...out.errorResult);
+      result.okResult.push(...res.okResult);
+      if (res.logs) {
+        result.logs.push(...res.logs);
+      }
+      if (res.errorResult) {
+        result.errorResult.push(...res.errorResult);
       }
     }
     return result;
@@ -218,6 +236,14 @@ export class Manufacture implements IManufacture {
       batch,
     );
     await this._repoPieces.save(piecesToStore);
+    if (res.logs?.length) {
+      const runReports = RunReportEntity.prepare(res.logs.map((report) => ({
+        ...report,
+        bid: to.id,
+        runConfig: to.getModel().lastRunConfig,
+      } as IQuasiReportEntity)));
+      await this._repoRunReport.save(runReports);
+    }
     pipe.releaseBatch(res.okResult);
     if (res.errorResult?.length) {
       pipe.failBatch(res.errorResult);

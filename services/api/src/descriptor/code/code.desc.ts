@@ -12,19 +12,20 @@ const descriptor :IBuildingTypeDescriptor<IPiece, IPieceMeta> = {
       if (Array.isArray(result)) {
         await push(result);
       } else {
+        // noinspection ExceptionCaughtLocallyJS
         throw new Error('Code must return an array');
       }
     } catch (err) {
       return {
         okResult: [],
         errorResult: [ ...input.map(({ pid }) => pid) ],
-        errorLogs: [ err.message ],
+        logs: [{ level: 'ERROR', message: err.message }],
       };
     }
     return {
       okResult: [ ...input.map(({ pid }) => pid) ],
       errorResult: [],
-      errorLogs: [],
+      logs: [],
     };
   },
 };

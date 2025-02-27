@@ -54,6 +54,7 @@ export class BuildingEntity extends BaseEntity {
   @ManyToOne(() => ManufactureEntity, manufacture => manufacture.buildings, {
     nullable: true,
     onDelete: 'SET NULL',
+    onUpdate: 'NO ACTION',
   })
   manufacture :Nullable<ManufactureEntity>;
 
@@ -76,6 +77,7 @@ export class BuildingEntity extends BaseEntity {
     nullable: true,
     eager: true,
     onDelete: 'CASCADE',
+    onUpdate: 'NO ACTION',
   })
   runConfig :BuildingRunConfigEntity[];
 

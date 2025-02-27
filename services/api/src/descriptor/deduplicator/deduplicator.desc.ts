@@ -68,7 +68,7 @@ const descriptor :IBuildingTypeDescriptor<IPiece, IPieceMeta> = {
     return {
       okResult: input.map(({ pid }) => pid),
       errorResult: [],
-      errorLogs: [],
+      logs: [{ message: `Process: ${input.length}, Pass: ${pass.length}, Reject: ${reject.length}` }],
     };
   },
 };

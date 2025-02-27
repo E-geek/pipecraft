@@ -2,6 +2,7 @@ import { Repository } from 'typeorm';
 import { IBuildingTypeDescriptor } from '@pipecraft/types';
 import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
 import { PieceEntity } from '@/db/entities/PieceEntity';
+import { RunReportEntity } from '@/db/entities/RunReportEntity';
 import { ManufactureMaker } from '@/parts/Manufacture/ManufactureMaker';
 import { Manufacture } from '@/parts/Manufacture/Manufacture';
 import { IBuilding } from '@/parts/Manufacture/Building';
@@ -39,6 +40,7 @@ export interface IHub {
 export interface IHubArgs {
   repoPieces :Repository<PieceEntity>;
   repoManufacture :Repository<ManufactureEntity>;
+  repoRunReports :Repository<RunReportEntity>;
   buildingTypes :Map<string, IBuildingTypeDescriptor>;
 }
 
@@ -48,6 +50,7 @@ export class Hub implements IHub {
   private _manufactures :Map<bigint, Manufacture>;
   private _repoManufacture :Repository<ManufactureEntity>;
   private _repoPieces :Repository<PieceEntity>;
+  private _repoRunReport :Repository<RunReportEntity>;
   private _buildingTypes :Map<string, IBuildingTypeDescriptor>;
   private _manufactureFinishWaiters :Map<bigint, IPromise<void>[]>;
 
@@ -55,6 +58,7 @@ export class Hub implements IHub {
     this._repoManufacture = args.repoManufacture;
     this._repoPieces = args.repoPieces;
     this._buildingTypes = args.buildingTypes;
+    this._repoRunReport = args.repoRunReports;
     // init value
     this._manufactures = new Map();
     this._facility = new Facility(32);
@@ -75,6 +79,7 @@ export class Hub implements IHub {
           this._onBuildingProducePieces(building);
         },
         repoPieces: this._repoPieces,
+        repoRunReports: this._repoRunReport,
         buildingTypes: this._buildingTypes,
       });
       if (manufacture instanceof Error) {

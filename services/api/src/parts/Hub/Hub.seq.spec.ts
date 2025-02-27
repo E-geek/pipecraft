@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { IBuildingTypeDescriptor, IPiece, IPieceMeta } from '@pipecraft/types';
 import { BuildingEntity } from '@/db/entities/BuildingEntity';
 import { PipeEntity } from '@/db/entities/PipeEntity';
@@ -8,6 +8,7 @@ import { SchedulerEntity } from '@/db/entities/SchedulerEntity';
 import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
 import { PieceEntity } from '@/db/entities/PieceEntity';
 import { BuildingRunConfigEntity } from '@/db/entities/BuildingRunConfigEntity';
+import { RunReportEntity } from '@/db/entities/RunReportEntity';
 import { TestPrinter } from '@/test/TestPrinter';
 import { getTestDBConf } from '@/test/db.conf';
 import { ManufactureService } from '@/manufacture/manufacture.service';
@@ -19,6 +20,9 @@ describe('Hub.seq', () => {
   let pieceRepo :Repository<PieceEntity>;
   let testPrinterRepo :Repository<TestPrinter>;
   let manufactureRepo :Repository<ManufactureEntity>;
+  let buildingRepo :Repository<BuildingEntity>;
+  let pipeRepo :Repository<PipeEntity>;
+  let runReportRepo :Repository<RunReportEntity>;
 
   type IPieceMetaLocal = IPieceMeta & { data :number };
   type IPieceLocal = IPiece<IPieceMetaLocal>;
@@ -84,6 +88,7 @@ describe('Hub.seq', () => {
           ManufactureEntity,
           PieceEntity,
           BuildingRunConfigEntity,
+          RunReportEntity,
         ]),
       ],
     }).compile();
@@ -91,6 +96,9 @@ describe('Hub.seq', () => {
     testPrinterRepo = module.get<Repository<TestPrinter>>(getRepositoryToken(TestPrinter));
     manufactureRepo = module.get<Repository<ManufactureEntity>>(getRepositoryToken(ManufactureEntity));
     pieceRepo = module.get<Repository<PieceEntity>>(getRepositoryToken(PieceEntity));
+    buildingRepo = module.get<Repository<BuildingEntity>>(getRepositoryToken(BuildingEntity));
+    pipeRepo = module.get<Repository<PipeEntity>>(getRepositoryToken(PipeEntity));
+    runReportRepo = module.get<Repository<RunReportEntity>>(getRepositoryToken(RunReportEntity));
     await manufactureRepo.delete({});
     await testPrinterRepo.delete({});
     await pieceRepo.delete({});
@@ -164,6 +172,7 @@ describe('Hub.seq', () => {
     const hub = new Hub({
       repoManufacture: manufactureRepo,
       repoPieces: pieceRepo,
+      repoRunReports: runReportRepo,
       buildingTypes: new Map([
         [ 'numberMiner', minerDescriptor ],
         [ 'incrementBy', factoryDescriptor ],
@@ -249,6 +258,7 @@ describe('Hub.seq', () => {
     const hub = new Hub({
       repoManufacture: manufactureRepo,
       repoPieces: pieceRepo,
+      repoRunReports: runReportRepo,
       buildingTypes: new Map([
         [ 'numberMiner', minerDescriptor ],
         [ 'incrementBy', factoryDescriptor ],
@@ -384,6 +394,7 @@ describe('Hub.seq', () => {
     const hub = new Hub({
       repoManufacture: manufactureRepo,
       repoPieces: pieceRepo,
+      repoRunReports: runReportRepo,
       buildingTypes: new Map([
         [ 'numberMiner', minerDescriptor ],
         [ 'incrementBy', factoryDescriptor ],
@@ -414,5 +425,126 @@ describe('Hub.seq', () => {
     expect(factoryReport.avg).toBeLessThan(1.05);
     expect(printerReport.max).toBeGreaterThanOrEqual(1);
     expect(allReport.max).toBeGreaterThanOrEqual(2);
+  });
+
+  it('test for reports in the db', async () => {
+    const building = await buildingRepo.find({
+      where: { bid: In([ 1, 2, 3 ]) },
+      relations: [ 'runConfig', 'manufacture' ],
+      order: {
+        bid: 'ASC',
+      },
+    });
+    await buildingRepo.update({
+      bid: In([ 1, 2, 3 ]),
+    }, {
+      batchSize: '100%',
+    });
+    const pipes = await pipeRepo.findBy({ pmid: In([ 1, 2 ]) });
+    const manufactureEntity = new ManufactureEntity({
+      title: 'Test manufacture',
+      buildings: building,
+      pipes,
+    });
+    await manufactureEntity.save();
+    const hub = new Hub({
+      repoManufacture: manufactureRepo,
+      repoPieces: pieceRepo,
+      repoRunReports: runReportRepo,
+      buildingTypes: new Map([
+        [ 'minerTest', {
+          gear(args) {
+            args.push([ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ]);
+            return {
+              okResult: [],
+              logs: [{ message: 'Mined 10 pieces', bid: 45n, level: 'DEBUG' }],
+            };
+          },
+        } as IBuildingTypeDescriptor<IPiece, number> ],
+        [ 'factoryTest', {
+          gear: (args) => {
+            args.push(args.input.map(p => p.data + 100));
+            return {
+              okResult: [ ...args.input.map(p => p.pid) ],
+              logs: [{ message: 'Incremented 10 pieces' }],
+            };
+          },
+        } as IBuildingTypeDescriptor<IPiece<number>, number> ],
+        [ 'printerTest', {
+          gear: ({ bid, input }) => {
+            return {
+              okResult: input.map(p => p.pid),
+              logs: [
+                { message: 'Printed 10 pieces', level: 'DEBUG', bid },
+                { message: 'Just a test for fail', level: 'ERROR' },
+                { message: 'This is fatal error', level: RunReportEntity.LEVEL_FATAL, pids: input.map(p => p.pid) },
+                { message: '', level: RunReportEntity.LEVEL_FATAL }, // should be skipped
+              ],
+            };
+          },
+        } as IBuildingTypeDescriptor<IPiece<number>, number> ],
+      ]),
+    });
+    await hub.loadAllManufactures();
+    const manufacture = hub.allManufactures.get(manufactureEntity.mid)!;
+    hub.addBuildingToFacility(manufacture.buildings[0]);
+    await hub.waitForFinish(manufactureEntity.mid);
+    // check every report
+    // miner
+    const reportMiner = await runReportRepo.findOne({
+      where: { building: { bid: 1n }},
+      relations: [ 'buildingRunConfig', 'building' ],
+    });
+    expect(reportMiner).not.toBeNull();
+    expect(reportMiner).toMatchObject({
+      level: 1,
+      message: 'Mined 10 pieces',
+      building: { bid: 1n },
+      pids: null,
+    } as Partial<RunReportEntity>);
+    expect(reportMiner!.buildingRunConfig.brcid).toBe(1n);
+    // factory
+    const reportFactory = await runReportRepo.findOne({
+      where: { buildingRunConfig: { brcid: 2n }},
+      relations: [ 'buildingRunConfig', 'building' ],
+    });
+    expect(reportFactory).not.toBeNull();
+    expect(reportFactory).toMatchObject({
+      level: 2,
+      message: 'Incremented 10 pieces',
+      building: { bid: 2n },
+      pids: null,
+    } as Partial<RunReportEntity>);
+    expect(reportFactory!.buildingRunConfig.brcid).toBe(2n);
+    // all from printer
+    const reportsPrinter = await runReportRepo.find({
+      where: { buildingRunConfig: { brcid: 3n }},
+      relations: [ 'buildingRunConfig', 'building' ],
+    });
+    expect(reportsPrinter).toHaveLength(3);
+    const debugPrinterReport = reportsPrinter.find(r => r.level === 1);
+    expect(debugPrinterReport).not.toBeNull();
+    expect(debugPrinterReport).toMatchObject({
+      level: 1,
+      message: 'Printed 10 pieces',
+      building: { bid: 3n },
+      pids: null,
+    } as Partial<RunReportEntity>);
+    const errorPrinterReport = reportsPrinter.find(r => r.level === 8);
+    expect(errorPrinterReport).not.toBeNull();
+    expect(errorPrinterReport).toMatchObject({
+      level: 8,
+      message: 'Just a test for fail',
+      building: { bid: 3n },
+      pids: null,
+    } as Partial<RunReportEntity>);
+    const fatalPrinterReport = reportsPrinter.find(r => r.level === 16);
+    expect(fatalPrinterReport).not.toBeNull();
+    expect(fatalPrinterReport).toMatchObject({
+      level: 16,
+      message: 'This is fatal error',
+      building: { bid: 3n },
+    } as Partial<RunReportEntity>);
+    expect(fatalPrinterReport!.pids).toHaveLength(10);
   });
 });

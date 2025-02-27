@@ -16,7 +16,7 @@ const dataSourceConfig = dbConfig() as PostgresConnectionOptions;
 export const getTestDBConf = () => {
   const conf :Writable<PostgresConnectionOptions> = JSON.parse(JSON.stringify(dataSourceConfig));
   conf.entities = [ TestPrinter, ...(conf.entities as string[]) ];
-  conf.logging = false;
+  conf.logging = 'all';
   conf.migrations = [ Migrations1739299794578,  ...(conf.migrations as string[]) ];
   return conf;
 };

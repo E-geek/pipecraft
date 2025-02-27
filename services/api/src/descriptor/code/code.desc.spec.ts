@@ -17,7 +17,7 @@ describe('descriptor.gear', () => {
     const result = await descriptor.gear(args);
     expect(result.okResult).toEqual([ 1 ]);
     expect(result.errorResult).toEqual([]);
-    expect(result.errorLogs).toEqual([]);
+    expect(result.logs).toEqual([]);
     expect(args.push).toHaveBeenCalledWith([{ pid: 1 }]);
   });
 
@@ -30,7 +30,10 @@ describe('descriptor.gear', () => {
     const result = await descriptor.gear(args);
     expect(result.okResult).toEqual([]);
     expect(result.errorResult).toEqual([ 1 ]);
-    expect(result.errorLogs).toEqual([ 'Code must return an array' ]);
+    expect(result.logs).toEqual([{
+      'level': 'ERROR',
+      'message': 'Code must return an array',
+    }]);
   });
 
   it('returns error when code throws an exception', async () => {
@@ -42,7 +45,10 @@ describe('descriptor.gear', () => {
     const result = await descriptor.gear(args);
     expect(result.okResult).toEqual([]);
     expect(result.errorResult).toEqual([ 1 ]);
-    expect(result.errorLogs).toEqual([ 'Test error' ]);
+    expect(result.logs).toEqual([{
+      message: 'Test error',
+      level: 'ERROR',
+    }]);
   });
 
   it('handles empty input array', async () => {
@@ -54,7 +60,7 @@ describe('descriptor.gear', () => {
     const result = await descriptor.gear(args);
     expect(result.okResult).toEqual([]);
     expect(result.errorResult).toEqual([]);
-    expect(result.errorLogs).toEqual([]);
+    expect(result.logs).toEqual([]);
     expect(args.push).toHaveBeenCalledWith([]);
   });
 
@@ -62,15 +68,17 @@ describe('descriptor.gear', () => {
     const args = {
       input: [{ pid: 4, data: 3 }, { pid: 16, data: 5 }, { pid: 32, data: 7 }, { pid: 33, data: 11 }],
       push: jest.fn(),
-      runConfig: { code: `
+      runConfig: {
+        code: `
         const list = input.map(({ data }) => data);
         return list.map(value => value * value);
-      ` },
+      `,
+      },
     } as unknown as IBuildingRunArgs;
     const result = await descriptor.gear(args);
     expect(result.okResult).toEqual([ 4, 16, 32, 33 ]);
     expect(result.errorResult).toEqual([]);
-    expect(result.errorLogs).toEqual([]);
+    expect(result.logs).toEqual([]);
     expect(args.push).toHaveBeenCalledWith([
       9,
       25,
