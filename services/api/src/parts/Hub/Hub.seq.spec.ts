@@ -170,7 +170,7 @@ describe('Hub.seq', () => {
       },
     };
     const hub = new Hub({
-      repoManufacture: manufactureRepo,
+      repoManufactures: manufactureRepo,
       repoPieces: pieceRepo,
       repoRunReports: runReportRepo,
       buildingTypes: new Map([
@@ -256,7 +256,7 @@ describe('Hub.seq', () => {
       },
     };
     const hub = new Hub({
-      repoManufacture: manufactureRepo,
+      repoManufactures: manufactureRepo,
       repoPieces: pieceRepo,
       repoRunReports: runReportRepo,
       buildingTypes: new Map([
@@ -392,7 +392,7 @@ describe('Hub.seq', () => {
       },
     };
     const hub = new Hub({
-      repoManufacture: manufactureRepo,
+      repoManufactures: manufactureRepo,
       repoPieces: pieceRepo,
       repoRunReports: runReportRepo,
       buildingTypes: new Map([
@@ -448,7 +448,7 @@ describe('Hub.seq', () => {
     });
     await manufactureEntity.save();
     const hub = new Hub({
-      repoManufacture: manufactureRepo,
+      repoManufactures: manufactureRepo,
       repoPieces: pieceRepo,
       repoRunReports: runReportRepo,
       buildingTypes: new Map([

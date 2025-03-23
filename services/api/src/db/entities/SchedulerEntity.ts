@@ -42,8 +42,8 @@ export class SchedulerEntity extends BaseEntity {
 
   @OneToOne(() => BuildingEntity, (building :BuildingEntity) => building.scheduler, {
     nullable: false,
-    onDelete: 'CASCADE',
     eager: true,
+    onDelete: 'CASCADE',
   })
   @JoinColumn()
   building :BuildingEntity;
@@ -59,10 +59,9 @@ export class SchedulerEntity extends BaseEntity {
 
   @ManyToOne(() => ManufactureEntity, (manufacture :ManufactureEntity) => manufacture.schedulers, {
     nullable: true,
-    lazy: true,
     onDelete: 'SET NULL',
   })
-  manufacture :Promise<Nullable<ManufactureEntity>>;
+  manufacture :Nullable<ManufactureEntity>;
 
   @CreateDateColumn()
   createdAt :Date;

@@ -1,4 +1,4 @@
-import { IBuildingTypeDescriptor, Nullable } from '@pipecraft/types';
+import { IBuildingTypes, Nullable } from '@pipecraft/types';
 import { Repository } from 'typeorm';
 import { BuildingEntity } from '@/db/entities/BuildingEntity';
 import { PieceEntity } from '@/db/entities/PieceEntity';
@@ -11,7 +11,7 @@ import { Building, IBuilding } from '@/parts/Manufacture/Building';
 
 export interface IBuildManufactureArgs {
   startBuildingId :bigint;
-  buildingTypes :Map<string, IBuildingTypeDescriptor>;
+  buildingTypes :IBuildingTypes;
   onStorePieces :IManufactureOnStorePieces;
   repoPieces :Repository<PieceEntity>;
   repoBuildings :Repository<BuildingEntity>;
@@ -23,7 +23,7 @@ export interface ILoadManufactureArgs {
   repoPieces :Repository<PieceEntity>;
   repoRunReports :Repository<RunReportEntity>;
   manufactureModel :ManufactureEntity;
-  buildingTypes :Map<string, IBuildingTypeDescriptor>;
+  buildingTypes :IBuildingTypes;
   onStorePieces :IManufactureOnStorePieces;
 }
 
@@ -31,7 +31,7 @@ export interface ILoadManufactureArgs {
  * Create and load manufactures
  */
 export class ManufactureMaker {
-  public static makeBuildingByModel(buildingModel :Nullable<BuildingEntity>, buildingTypes :Map<string, IBuildingTypeDescriptor>) :IBuilding | Error {
+  public static makeBuildingByModel(buildingModel :Nullable<BuildingEntity>, buildingTypes :IBuildingTypes) :IBuilding | Error {
     if (!buildingModel) {
       return Error('Building node error');
     }

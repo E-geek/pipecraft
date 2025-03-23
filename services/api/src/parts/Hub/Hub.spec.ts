@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { IBuildingTypeDescriptor } from '@pipecraft/types';
+import { IBuildingTypes } from '@pipecraft/types';
 import { PieceEntity } from '@/db/entities/PieceEntity';
 import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
 import { RunReportEntity } from '@/db/entities/RunReportEntity';
@@ -14,7 +14,7 @@ describe('Hub', () => {
   let repoPieces :Repository<PieceEntity>;
   let repoManufacture :Repository<ManufactureEntity>;
   let repoRunReports :Repository<RunReportEntity>;
-  let buildingTypes :Map<string, IBuildingTypeDescriptor>;
+  let buildingTypes :IBuildingTypes;
 
   beforeEach(() => {
     repoPieces = {
@@ -27,7 +27,7 @@ describe('Hub', () => {
       save: jest.fn(),
     } as unknown as Repository<RunReportEntity>;
     buildingTypes = new Map();
-    hub = new Hub({ repoPieces, repoRunReports, repoManufacture, buildingTypes });
+    hub = new Hub({ repoPieces, repoRunReports, repoManufactures: repoManufacture, buildingTypes });
   });
 
   it('loads all manufactures successfully', async () => {

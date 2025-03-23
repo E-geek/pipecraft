@@ -1,6 +1,6 @@
 import { globSync } from 'fast-glob';
 import { Injectable } from '@nestjs/common';
-import { IBuildingTypeExport } from '@pipecraft/types';
+import { IBuildingTypeDescriptor, IBuildingTypeExport, IBuildingTypes } from '@pipecraft/types';
 
 export interface IBureauOptions {
   path :(string|IBuildingTypeExport)[];
@@ -37,5 +37,14 @@ export class BureauService {
 
   getMigrations() :IBuildingTypeExport['migrations'] {
     return this._listBuildingTypes.map(({ migrations }) => migrations).flat().filter(item => !!item) as string[];
+  }
+
+  getBuildingTypes() :IBuildingTypes {
+    const buildingTypes = new Map<string, IBuildingTypeDescriptor>();
+    for (let i = 0; i < this._listBuildingTypes.length; i++){
+      const buildingType = this._listBuildingTypes[i];
+      buildingTypes.set(buildingType.title, buildingType.descriptor);
+    }
+    return buildingTypes;
   }
 }

@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { IBuildingTypeDescriptor } from '@pipecraft/types';
+import { IBuildingTypes } from '@pipecraft/types';
 import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
 import { PieceEntity } from '@/db/entities/PieceEntity';
 import { RunReportEntity } from '@/db/entities/RunReportEntity';
@@ -39,9 +39,9 @@ export interface IHub {
 
 export interface IHubArgs {
   repoPieces :Repository<PieceEntity>;
-  repoManufacture :Repository<ManufactureEntity>;
+  repoManufactures :Repository<ManufactureEntity>;
   repoRunReports :Repository<RunReportEntity>;
-  buildingTypes :Map<string, IBuildingTypeDescriptor>;
+  buildingTypes :IBuildingTypes;
 }
 
 export class Hub implements IHub {
@@ -51,11 +51,11 @@ export class Hub implements IHub {
   private _repoManufacture :Repository<ManufactureEntity>;
   private _repoPieces :Repository<PieceEntity>;
   private _repoRunReport :Repository<RunReportEntity>;
-  private _buildingTypes :Map<string, IBuildingTypeDescriptor>;
+  private _buildingTypes :IBuildingTypes;
   private _manufactureFinishWaiters :Map<bigint, IPromise<void>[]>;
 
   constructor(args :IHubArgs) {
-    this._repoManufacture = args.repoManufacture;
+    this._repoManufacture = args.repoManufactures;
     this._repoPieces = args.repoPieces;
     this._buildingTypes = args.buildingTypes;
     this._repoRunReport = args.repoRunReports;

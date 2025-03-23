@@ -1,24 +1,21 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { BuildingEntity } from '@/db/entities/BuildingEntity';
-import { PipeEntity } from '@/db/entities/PipeEntity';
 import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
-import { BuildingRunConfigEntity } from '@/db/entities/BuildingRunConfigEntity';
-import { SchedulerEntity } from '@/db/entities/SchedulerEntity';
 import { PieceEntity } from '@/db/entities/PieceEntity';
+import { RunReportEntity } from '@/db/entities/RunReportEntity';
+import { BureauModule } from '@/bureau/bureau.module';
 import { ManufactureService } from './manufacture.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      BuildingEntity,
-      PipeEntity,
-      SchedulerEntity,
       ManufactureEntity,
       PieceEntity,
-      BuildingRunConfigEntity,
+      RunReportEntity,
     ]),
+    BureauModule,
   ],
   providers: [ ManufactureService ],
+  exports: [ ManufactureService ],
 })
 export class ManufactureModule {}

@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { Writable } from '@pipecraft/types';
 import { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
+import { ScheduleModule } from '@nestjs/schedule';
 import config, { dotEnvPath } from '@/config/config';
 import dbConfig from '@/config/db.config';
 import { validationSchema } from '@/config/validation';
@@ -13,6 +14,7 @@ import { UsersModule } from '@/users/users.module';
 import { ManufactureModule } from '@/manufacture/manufacture.module';
 import { BureauModule } from './bureau/bureau.module';
 import { BureauService } from '@/bureau/bureau.service';
+import { IronClockModule } from './iron-clock/iron-clock.module';
 
 @Module({
   imports: [
@@ -37,11 +39,13 @@ import { BureauService } from '@/bureau/bureau.service';
         return { ...conf };
       },
     }),
+    ScheduleModule.forRoot(),
     PingModule,
     AuthModule,
     UsersModule,
     ManufactureModule,
     BureauModule,
+    IronClockModule,
   ],
   controllers: [],
   providers: [],

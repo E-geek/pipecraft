@@ -59,6 +59,8 @@ export interface IBuildingTypeDescriptor<InputType = IPiece, OutputType = IPiece
   }
 }
 
+export type IBuildingTypes = Map<string, IBuildingTypeDescriptor>;
+
 export interface IBuildingTypeExport<InputType = IPiece, OutputType = IPieceMeta> extends Pick<BaseDataSourceOptions, 'entities' | 'migrations'>{
   title :string; // title for DB
   descriptor :IBuildingTypeDescriptor<InputType, OutputType>;
