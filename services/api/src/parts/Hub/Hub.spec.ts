@@ -57,18 +57,18 @@ describe('Hub', () => {
     jest.spyOn(hub['_facility'], 'hasBuilding').mockReturnValue(false);
     jest.spyOn(hub['_queueArea'], 'has').mockReturnValue(false);
     jest.spyOn(hub['_queueArea'], 'push');
-    await hub.addBuildingToFacility(building);
+    hub.addBuildingToFacility(building);
     expect(hub['_queueArea'].push).toHaveBeenCalled();
   });
 
   it('throws error when adding building without manufacture', async () => {
     const building = { id: BigInt(1), manufacture: undefined, isMiner: true } as IBuilding;
-    await expect(hub.addBuildingToFacility(building)).rejects.toThrow('Building has no manufacture');
+    expect(() => hub.addBuildingToFacility(building)).toThrow('Building has no manufacture');
   });
 
   it('throws error when adding non-miner building without pipe', async () => {
     const building = { id: BigInt(1), manufacture: { id: BigInt(1) }, isMiner: false } as IBuilding;
-    await expect(hub.addBuildingToFacility(building)).rejects.toThrow('pipe is required for non-miner building');
+    expect(() => hub.addBuildingToFacility(building)).toThrow('pipe is required for non-miner building');
   });
 
   it('waits for manufacture to finish', async () => {

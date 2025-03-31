@@ -9,6 +9,7 @@ import { ManufactureEntity } from '@/db/entities/ManufactureEntity';
 import { PieceEntity } from '@/db/entities/PieceEntity';
 import { BuildingRunConfigEntity } from '@/db/entities/BuildingRunConfigEntity';
 import { RunReportEntity } from '@/db/entities/RunReportEntity';
+import { BureauModule } from '@/bureau/bureau.module';
 import { TestPrinter } from '@/test/TestPrinter';
 import { getTestDBConf } from '@/test/db.conf';
 import { ManufactureService } from '@/manufacture/manufacture.service';
@@ -79,6 +80,7 @@ describe('Hub.seq', () => {
     const module :TestingModule = await Test.createTestingModule({
       providers: [ ManufactureService ],
       imports: [
+        BureauModule.forRoot({ path: []}),
         TypeOrmModule.forRoot(getTestDBConf()),
         TypeOrmModule.forFeature([
           TestPrinter,

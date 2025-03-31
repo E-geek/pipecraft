@@ -111,7 +111,7 @@ describe('IronClockService', () => {
 
     // Assert that the task has executed exactly once
     expect(spyExecuteTask).toHaveBeenCalledTimes(1);
-    expect(spyExecuteTask).toHaveBeenCalledWith(90n, 45n);
+    expect(spyExecuteTask).toHaveBeenCalledWith(45n, 90n);
 
     // Simulate passing 1 full day
     jest.advanceTimersByTime(oneDayInMs);

@@ -45,6 +45,7 @@ export interface IHubArgs {
 }
 
 export class Hub implements IHub {
+  // place for awaited buildings, "wait room"
   private _queueArea :QueueArea;
   private _facility :Facility;
   private _manufactures :Map<bigint, Manufacture>;
@@ -90,13 +91,14 @@ export class Hub implements IHub {
     return this;
   }
 
-  public async addBuildingToFacility(building :IBuilding, pipe ?:IPipe) {
+  public addBuildingToFacility(building :IBuilding, pipe ?:IPipe) {
     if (!building.manufacture) {
       throw new Error('Building has no manufacture');
     }
     if (!building.isMiner && !pipe) {
       throw new Error('pipe is required for non-miner building');
     }
+    // todo bugfix: second and next pipes will be skipped
     if (this._facility.hasBuilding(building.id)) {
       // do nothing: building already is works
       return;

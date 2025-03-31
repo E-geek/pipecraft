@@ -57,7 +57,7 @@ export class IronClockService implements OnModuleInit, OnModuleDestroy {
     }
 
     const job = new CronJob(task.cron, () => {
-      this._manufactureService.addBuildingToQueue(task.manufacture!.mid, task.building.bid);
+      this._manufactureService.addBuildingToQueue(task.building.bid, task.manufacture!.mid);
     });
 
     this._schedulerRegistry.addCronJob(id, job);

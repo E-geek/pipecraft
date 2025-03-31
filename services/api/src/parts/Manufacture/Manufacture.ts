@@ -255,6 +255,10 @@ export class Manufacture implements IManufacture {
     return [ ...this._buildings.values() ];
   }
 
+  public getBuilding(bid :bigint) {
+    return this._buildings.get(bid);
+  }
+
   public get pipes() {
     return [ ...this._pipes ];
   }
@@ -270,6 +274,11 @@ export class Manufacture implements IManufacture {
   public getPipesFrom(building :IBuilding) :IPipe[] {
     // can be optimised
     return [ ...this._pipes ].filter(pipe => pipe.from === building);
+  }
+
+  public getPipesTo(building :IBuilding) :IPipe[] {
+    // can be optimised
+    return [ ...this._pipes ].filter(pipe => pipe.to === building);
   }
 
   public isBuildingCanFacility(building :IBuilding) :boolean {
